@@ -1,0 +1,305 @@
+.difficulty-select-container {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.difficulty-select-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  z-index: 1;
+}
+
+.difficulty-select-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(34, 197, 94, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(234, 179, 8, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(239, 68, 68, 0.1) 0%, transparent 50%);
+}
+
+.difficulty-select-content {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  padding: 40px;
+  max-width: 1200px;
+  width: 100%;
+}
+
+.difficulty-select-title {
+  font-size: 48px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  margin-bottom: 10px;
+  letter-spacing: 5px;
+}
+
+.difficulty-select-subtitle {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 50px;
+}
+
+.difficulty-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.difficulty-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 30px 25px;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.difficulty-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.difficulty-card.easy::before {
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+}
+
+.difficulty-card.normal::before {
+  background: linear-gradient(90deg, #eab308, #facc15);
+}
+
+.difficulty-card.hard::before {
+  background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+.difficulty-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.difficulty-card:hover::before {
+  opacity: 1;
+}
+
+.difficulty-card.easy:hover {
+  border-color: #22c55e;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 30px rgba(34, 197, 94, 0.2);
+}
+
+.difficulty-card.normal:hover {
+  border-color: #eab308;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 30px rgba(234, 179, 8, 0.2);
+}
+
+.difficulty-card.hard:hover {
+  border-color: #ef4444;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 30px rgba(239, 68, 68, 0.2);
+}
+
+.difficulty-card-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.difficulty-icon {
+  font-size: 60px;
+  margin-bottom: 10px;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+}
+
+.difficulty-name {
+  font-size: 28px;
+  font-weight: bold;
+  color: #fff;
+  margin: 0;
+}
+
+.difficulty-card.easy .difficulty-name {
+  color: #4ade80;
+}
+
+.difficulty-card.normal .difficulty-name {
+  color: #facc15;
+}
+
+.difficulty-card.hard .difficulty-name {
+  color: #f87171;
+}
+
+.difficulty-description {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+  min-height: 40px;
+}
+
+.difficulty-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin: 15px 0;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+.difficulty-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+}
+
+.difficulty-stat .stat-label {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.difficulty-stat .stat-value {
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.difficulty-features {
+  width: 100%;
+  text-align: left;
+}
+
+.difficulty-features h3 {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 10px;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.difficulty-features ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.difficulty-features li {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  padding: 5px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.difficulty-features li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.difficulty-card.easy .difficulty-features li::before {
+  color: #4ade80;
+}
+
+.difficulty-card.normal .difficulty-features li::before {
+  color: #facc15;
+}
+
+.difficulty-card.hard .difficulty-features li::before {
+  color: #f87171;
+}
+
+.select-difficulty-btn {
+  margin-top: 20px;
+  padding: 12px 30px;
+  font-size: 16px;
+  font-weight: bold;
+  border: 2px solid;
+  border-radius: 25px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.difficulty-card.easy .select-difficulty-btn {
+  border-color: #22c55e;
+}
+
+.difficulty-card.easy .select-difficulty-btn:hover {
+  background: #22c55e;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+}
+
+.difficulty-card.normal .select-difficulty-btn {
+  border-color: #eab308;
+}
+
+.difficulty-card.normal .select-difficulty-btn:hover {
+  background: #eab308;
+  box-shadow: 0 0 20px rgba(234, 179, 8, 0.5);
+}
+
+.difficulty-card.hard .select-difficulty-btn {
+  border-color: #ef4444;
+}
+
+.difficulty-card.hard .select-difficulty-btn:hover {
+  background: #ef4444;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+}
+
+.back-btn {
+  padding: 12px 40px;
+  font-size: 16px;
+  font-weight: bold;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 25px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* 响应式适配 */
+@media (max-width: 1024px) {
+  .difficulty-cards {
+    grid-template-columns: 1fr;
+    max-width: 400px;
+    margin: 0 auto 40px;
+  }
+}

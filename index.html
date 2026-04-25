@@ -1,0 +1,3671 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VS TATE - 回合制对战</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .game-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            position: relative;
+        }
+
+        .left-panel {
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(135deg, #4a90d9 0%, #2c5f8f 50%, #1a3a5c 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .left-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 30% 70%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(100,180,255,0.2) 0%, transparent 40%);
+        }
+
+        .right-panel {
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(225deg, #c94c4c 0%, #8b2f2f 50%, #5c1a1a 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .right-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 70% 70%, rgba(255,200,200,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 30% 30%, rgba(255,107,107,0.2) 0%, transparent 40%);
+        }
+
+        .vs-title {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .vs-text {
+            font-size: 80px;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 
+                0 0 10px rgba(255,255,255,0.8),
+                0 0 20px rgba(255,255,255,0.5),
+                0 0 30px rgba(100,200,255,0.5),
+                0 0 40px rgba(255,100,100,0.5),
+                4px 4px 0px rgba(0,0,0,0.5);
+            letter-spacing: 10px;
+            animation: vsPulse 2s ease-in-out infinite;
+        }
+
+        .tate-text {
+            font-size: 80px;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 
+                0 0 10px rgba(255,255,255,0.8),
+                0 0 20px rgba(255,255,255,0.5),
+                0 0 30px rgba(100,200,255,0.5),
+                0 0 40px rgba(255,100,100,0.5),
+                4px 4px 0px rgba(0,0,0,0.5);
+            letter-spacing: 5px;
+            animation: vsPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes vsPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.9; }
+        }
+
+        .decorative-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 300px;
+            border: 3px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .decorative-ring::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            bottom: 20px;
+            border: 2px dashed rgba(255,255,255,0.15);
+            border-radius: 50%;
+            animation: ringRotate 10s linear infinite;
+        }
+
+        @keyframes ringRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .player-area {
+            position: absolute;
+            top: 80px;
+            z-index: 50;
+        }
+
+        .player-left {
+            left: 60px;
+        }
+
+        .player-right {
+            right: 60px;
+        }
+
+        .avatar-container {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 4px solid rgba(255,255,255,0.8);
+            overflow: hidden;
+            position: relative;
+            box-shadow: 
+                0 0 20px rgba(0,0,0,0.5),
+                inset 0 0 30px rgba(0,0,0,0.3);
+            background: linear-gradient(135deg, #333 0%, #111 100%);
+        }
+
+        .player-left .avatar-container {
+            border-color: #6bb6ff;
+            box-shadow: 
+                0 0 20px rgba(107,182,255,0.5),
+                0 0 40px rgba(107,182,255,0.3),
+                inset 0 0 30px rgba(0,0,0,0.3);
+        }
+
+        .player-right .avatar-container {
+            border-color: #ff6b6b;
+            box-shadow: 
+                0 0 20px rgba(255,107,107,0.5),
+                0 0 40px rgba(255,107,107,0.3),
+                inset 0 0 30px rgba(0,0,0,0.3);
+        }
+
+        .avatar {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            color: rgba(255,255,255,0.9);
+        }
+
+        /* 战斗中宠物显示 - 在头像旁边 */
+        .battle-pet {
+            position: absolute;
+            top: 50%;
+            right: -60px;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 3px solid #d4a84b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            z-index: 10;
+            box-shadow: 0 0 15px rgba(212,168,75,0.5);
+            animation: petFloat 2s ease-in-out infinite;
+        }
+
+        @keyframes petFloat {
+            0%, 100% { transform: translateY(-50%) translateY(0); }
+            50% { transform: translateY(-50%) translateY(-5px); }
+        }
+
+        .battle-pet.common { border-color: #888; box-shadow: 0 0 10px rgba(136,136,136,0.4); }
+        .battle-pet.rare { border-color: #3b82f6; box-shadow: 0 0 12px rgba(59,130,246,0.5); }
+        .battle-pet.epic { border-color: #a855f7; box-shadow: 0 0 15px rgba(168,85,247,0.6); }
+        .battle-pet.legendary { border-color: #eab308; box-shadow: 0 0 20px rgba(234,179,8,0.7); animation: petFloat 2s ease-in-out infinite, petGlow 1.5s ease-in-out infinite; }
+
+        @keyframes petGlow {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.3); }
+        }
+
+        .status-bars {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .player-left .status-bars {
+            align-items: flex-start;
+        }
+
+        .player-right .status-bars {
+            align-items: flex-end;
+        }
+
+        .hp-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0,0,0,0.4);
+            padding: 8px 15px;
+            border-radius: 25px;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .hp-bar-bg {
+            width: 180px;
+            height: 20px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .hp-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4444 0%, #ff6666 50%, #ff4444 100%);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            position: relative;
+            box-shadow: 0 0 10px rgba(255,68,68,0.5);
+        }
+
+        .hp-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 100%);
+            border-radius: 10px 10px 0 0;
+        }
+
+        .hp-text {
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            min-width: 70px;
+        }
+
+        .np-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #4a90d9 0%, #2c5f8f 100%);
+            padding: 6px 15px;
+            border-radius: 20px;
+            border: 2px solid rgba(255,255,255,0.4);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .np-text {
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .shield-indicator {
+            background: linear-gradient(135deg, #4ecdc4 0%, #2a9a92 100%);
+            padding: 6px 15px;
+            border-radius: 20px;
+            color: #fff;
+            font-weight: bold;
+            font-size: 14px;
+            border: 2px solid rgba(255,255,255,0.4);
+        }
+
+        .defense-indicator {
+            background: linear-gradient(135deg, #6b6b6b 0%, #4a4a4a 100%);
+            padding: 6px 15px;
+            border-radius: 20px;
+            color: #fff;
+            font-weight: bold;
+            font-size: 14px;
+            border: 2px solid rgba(255,255,255,0.4);
+        }
+
+        .skills-container {
+            position: absolute;
+            bottom: 80px;
+            left: 60px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            z-index: 50;
+        }
+
+        .skill-btn {
+            width: 160px;
+            padding: 15px;
+            border: 3px solid;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.5), 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .skill-btn:hover:not(:disabled) {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 0 rgba(0,0,0,0.5), 0 12px 30px rgba(0,0,0,0.4);
+        }
+
+        .skill-btn:active:not(:disabled) {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .skill-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(0.8);
+        }
+
+        .skill-name {
+            color: #fff;
+            font-size: 22px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 8px;
+        }
+
+        .skill-desc {
+            color: rgba(255,255,255,0.9);
+            font-size: 13px;
+            line-height: 1.5;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        @keyframes btnClick {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.95); }
+            100% { transform: scale(1); }
+        }
+
+        .skill-btn.clicking {
+            animation: btnClick 0.2s ease;
+        }
+
+        .damage-number {
+            position: absolute;
+            font-size: 48px;
+            font-weight: bold;
+            color: #ff4444;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            animation: damageFloat 1s ease-out forwards;
+            pointer-events: none;
+            z-index: 200;
+        }
+
+        .heal-number {
+            position: absolute;
+            font-size: 48px;
+            font-weight: bold;
+            color: #44ff44;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            animation: damageFloat 1s ease-out forwards;
+            pointer-events: none;
+            z-index: 200;
+        }
+
+        @keyframes damageFloat {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-80px) scale(1.2);
+                opacity: 0;
+            }
+        }
+
+        /* ==================== 技能特效系统 ==================== */
+        .skill-effect-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 150;
+            overflow: hidden;
+        }
+
+        /* ---- 攻击类特效 ---- */
+        /* 剑气斩击 - 武士决进 */
+        .effect-slash {
+            position: absolute;
+            width: 200px;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, #fff, #4a90d9, transparent);
+            border-radius: 2px;
+            box-shadow: 0 0 20px #4a90d9, 0 0 40px #4a90d9;
+            animation: slashFly 0.6s ease-out forwards;
+        }
+
+        @keyframes slashFly {
+            0% { transform: translateX(-100px) scaleX(0.5); opacity: 0; }
+            30% { transform: translateX(0) scaleX(1); opacity: 1; }
+            100% { transform: translateX(300px) scaleX(1.5); opacity: 0; }
+        }
+
+        /* 火球术 - 法师 */
+        .effect-fireball {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #ff6b35 0%, #ff4500 40%, #8b0000 100%);
+            box-shadow: 0 0 30px #ff6b35, 0 0 60px #ff4500, inset 0 0 20px #ffd700;
+            animation: fireballFly 0.8s ease-out forwards;
+        }
+
+        .effect-fireball::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #ffd700 0%, transparent 70%);
+            animation: fireCorePulse 0.2s ease-in-out infinite;
+        }
+
+        @keyframes fireCorePulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.3); }
+        }
+
+        @keyframes fireballFly {
+            0% { transform: translateX(-50px) scale(0.5); opacity: 0; }
+            20% { transform: translateX(0) scale(1); opacity: 1; }
+            80% { transform: translateX(250px) scale(1); opacity: 1; }
+            100% { transform: translateX(300px) scale(1.5); opacity: 0; }
+        }
+
+        /* 爆炸效果 */
+        .effect-explosion {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            animation: explosionExpand 0.5s ease-out forwards;
+        }
+
+        .effect-explosion::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,107,53,0.6) 30%, rgba(255,69,0,0.3) 60%, transparent 100%);
+        }
+
+        @keyframes explosionExpand {
+            0% { transform: scale(0); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        /* 元素风暴 - 法师大招 */
+        .effect-elemental-storm {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            animation: stormRotate 1s ease-out forwards;
+        }
+
+        .storm-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 3px solid;
+            animation: stormRingExpand 0.8s ease-out forwards;
+        }
+
+        .storm-ring:nth-child(1) { border-color: #ff6b35; width: 100%; height: 100%; top: 0; left: 0; }
+        .storm-ring:nth-child(2) { border-color: #4ecdc4; width: 70%; height: 70%; top: 15%; left: 15%; animation-delay: 0.1s; }
+        .storm-ring:nth-child(3) { border-color: #a855f7; width: 40%; height: 40%; top: 30%; left: 30%; animation-delay: 0.2s; }
+
+        @keyframes stormRingExpand {
+            0% { transform: scale(0) rotate(0deg); opacity: 1; }
+            100% { transform: scale(2) rotate(180deg); opacity: 0; }
+        }
+
+        .storm-particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: stormParticleFly 0.6s ease-out forwards;
+        }
+
+        @keyframes stormParticleFly {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+
+        /* 精准射击 - 射手 */
+        .effect-arrow {
+            position: absolute;
+            width: 120px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #fff, #16a34a, transparent);
+            box-shadow: 0 0 15px #16a34a;
+            animation: arrowFly 0.5s ease-out forwards;
+        }
+
+        .effect-arrow::after {
+            content: '';
+            position: absolute;
+            right: -10px;
+            top: -4px;
+            width: 0;
+            height: 0;
+            border-left: 12px solid #16a34a;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+        }
+
+        @keyframes arrowFly {
+            0% { transform: translateX(-80px) scaleX(0.3); opacity: 0; }
+            30% { transform: translateX(0) scaleX(1); opacity: 1; }
+            100% { transform: translateX(350px) scaleX(1); opacity: 0; }
+        }
+
+        /* 连射 - 多支箭 */
+        .effect-multi-arrow {
+            position: absolute;
+            width: 100px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #15803d, transparent);
+            box-shadow: 0 0 10px #15803d;
+            animation: multiArrowFly 0.4s ease-out forwards;
+        }
+
+        @keyframes multiArrowFly {
+            0% { transform: translateX(-60px); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateX(300px); opacity: 0; }
+        }
+
+        /* 毒箭 - 绿色毒雾 */
+        .effect-poison {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(132,204,22,0.6) 0%, rgba(101,163,13,0.3) 50%, transparent 100%);
+            animation: poisonSpread 1s ease-out forwards;
+        }
+
+        @keyframes poisonSpread {
+            0% { transform: scale(0); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.8; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+
+        /* 盾击 */
+        .effect-shield-bash {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 4px solid #64748b;
+            animation: shieldBash 0.5s ease-out forwards;
+        }
+
+        @keyframes shieldBash {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1.5) translateX(100px); opacity: 0; }
+        }
+
+        /* ---- 防御类特效 ---- */
+        /* 无敌状态 - 潜龙 */
+        .effect-invincible {
+            position: absolute;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            border: 3px solid rgba(201,76,76,0.8);
+            box-shadow: 0 0 30px rgba(201,76,76,0.5), inset 0 0 30px rgba(201,76,76,0.3);
+            animation: invinciblePulse 0.8s ease-out forwards;
+        }
+
+        .effect-invincible::before {
+            content: '';
+            position: absolute;
+            top: 10%; left: 10%; right: 10%; bottom: 10%;
+            border-radius: 50%;
+            border: 2px dashed rgba(255,215,0,0.6);
+            animation: invincibleRotate 2s linear infinite;
+        }
+
+        @keyframes invinciblePulse {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+
+        @keyframes invincibleRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 护盾特效 */
+        .effect-shield {
+            position: absolute;
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            border: 4px solid #4ecdc4;
+            box-shadow: 0 0 25px #4ecdc4, inset 0 0 25px rgba(78,205,196,0.3);
+            animation: shieldAppear 0.6s ease-out forwards;
+        }
+
+        .effect-shield::before {
+            content: '';
+            position: absolute;
+            top: 15%; left: 15%; right: 15%; bottom: 15%;
+            border-radius: 50%;
+            border: 2px solid rgba(78,205,196,0.5);
+        }
+
+        @keyframes shieldAppear {
+            0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+            60% { transform: scale(1.1) rotate(10deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 0.9; }
+        }
+
+        /* 格挡特效 */
+        .effect-block {
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(71,85,105,0.4) 0%, transparent 70%);
+            border: 3px solid #475569;
+            animation: blockAppear 0.5s ease-out forwards;
+        }
+
+        @keyframes blockAppear {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.7; }
+        }
+
+        /* ---- 治疗类特效 ---- */
+        /* 治疗光芒 */
+        .effect-heal {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            animation: healGlow 1s ease-out forwards;
+        }
+
+        .effect-heal::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(139,90,159,0.5) 0%, rgba(168,85,247,0.3) 40%, transparent 70%);
+        }
+
+        .heal-particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #a855f7;
+            box-shadow: 0 0 8px #a855f7;
+            animation: healParticleRise 1s ease-out forwards;
+        }
+
+        @keyframes healGlow {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.3); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+
+        @keyframes healParticleRise {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-100px) scale(0); opacity: 0; }
+        }
+
+        /* 铁壁 - 治疗+护盾组合 */
+        .effect-ironwall {
+            position: absolute;
+            width: 170px;
+            height: 170px;
+            border-radius: 50%;
+            border: 3px solid #334155;
+            box-shadow: 0 0 20px #334155, inset 0 0 20px rgba(51,65,85,0.3);
+            animation: ironwallAppear 0.8s ease-out forwards;
+        }
+
+        .effect-ironwall::before {
+            content: '';
+            position: absolute;
+            top: 20%; left: 20%; right: 20%; bottom: 20%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(139,90,159,0.3) 0%, transparent 70%);
+        }
+
+        @keyframes ironwallAppear {
+            0% { transform: scale(0); opacity: 0; }
+            40% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.9; }
+        }
+
+        /* ---- 敌方攻击特效 ---- */
+        /* 敌方普通攻击 */
+        .effect-enemy-attack {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,68,68,0.6) 0%, rgba(139,0,0,0.3) 50%, transparent 100%);
+            animation: enemyAttackFly 0.5s ease-out forwards;
+        }
+
+        @keyframes enemyAttackFly {
+            0% { transform: translateX(100px) scale(0.5); opacity: 0; }
+            50% { transform: translateX(0) scale(1); opacity: 1; }
+            100% { transform: translateX(-200px) scale(0.8); opacity: 0; }
+        }
+
+        /* 敌方重击 */
+        .effect-enemy-heavy {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,0,0,0.7) 0%, rgba(139,0,0,0.4) 40%, transparent 70%);
+            border: 3px solid rgba(255,0,0,0.5);
+            animation: enemyHeavyFly 0.6s ease-out forwards;
+        }
+
+        @keyframes enemyHeavyFly {
+            0% { transform: translateX(150px) scale(0.3); opacity: 0; }
+            40% { transform: translateX(0) scale(1.2); opacity: 1; }
+            100% { transform: translateX(-250px) scale(0.5); opacity: 0; }
+        }
+
+        /* 敌方治疗 */
+        .effect-enemy-heal {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,107,107,0.4) 0%, rgba(201,76,76,0.2) 50%, transparent 100%);
+            animation: enemyHealPulse 0.8s ease-out forwards;
+        }
+
+        @keyframes enemyHealPulse {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.5); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+
+        /* 屏幕震动 */
+        .screen-shake {
+            animation: screenShake 0.3s ease-out;
+        }
+
+        @keyframes screenShake {
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-5px, 5px); }
+            40% { transform: translate(5px, -5px); }
+            60% { transform: translate(-5px, -5px); }
+            80% { transform: translate(5px, 5px); }
+        }
+
+        /* 受击闪光 */
+        .hit-flash {
+            animation: hitFlash 0.2s ease-out;
+        }
+
+        @keyframes hitFlash {
+            0% { filter: brightness(1); }
+            50% { filter: brightness(2) saturate(2); }
+            100% { filter: brightness(1); }
+        }
+
+        /* 粒子系统 */
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: particleFade 0.8s ease-out forwards;
+        }
+
+        @keyframes particleFade {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--px), var(--py)) scale(0); opacity: 0; }
+        }
+
+        /* 性能优化：减少动画复杂度 */
+        @media (prefers-reduced-motion: reduce) {
+            .effect-slash, .effect-fireball, .effect-explosion,
+            .effect-elemental-storm, .effect-arrow, .effect-multi-arrow,
+            .effect-poison, .effect-shield-bash, .effect-invincible,
+            .effect-shield, .effect-block, .effect-heal,
+            .effect-ironwall, .effect-enemy-attack, .effect-enemy-heavy,
+            .effect-enemy-heal {
+                animation-duration: 0.3s !important;
+            }
+            .storm-particle, .heal-particle, .particle {
+                display: none !important;
+            }
+        }
+
+        /* ==================== 特效系统结束 ==================== */
+
+        /* ==================== 装备系统样式 ==================== */
+        .equipment-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .equipment-overlay.show {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .equipment-modal {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            border: 3px solid #b8860b;
+            border-radius: 20px;
+            padding: 30px 40px;
+            max-width: 900px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            animation: modalPop 0.4s ease;
+            box-shadow: 0 0 50px rgba(184,134,11,0.4);
+        }
+
+        .equipment-title {
+            color: #d4a84b;
+            font-size: 28px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(212,168,75,0.5);
+        }
+
+        .equipment-subtitle {
+            color: rgba(255,255,255,0.6);
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .equipment-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .equipment-card {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .equipment-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--equip-color, #b8860b);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3), 0 0 20px var(--equip-glow, rgba(184,134,11,0.3));
+        }
+
+        .equipment-card.selected {
+            border-color: #22c55e;
+            box-shadow: 0 0 30px rgba(34,197,94,0.4);
+        }
+
+        .equipment-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .equipment-name {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .equipment-rarity {
+            font-size: 12px;
+            font-weight: bold;
+            padding: 3px 10px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .rarity-common {
+            background: rgba(150,150,150,0.2);
+            color: #aaa;
+            border: 1px solid #888;
+        }
+
+        .rarity-rare {
+            background: rgba(59,130,246,0.2);
+            color: #60a5fa;
+            border: 1px solid #3b82f6;
+        }
+
+        .rarity-epic {
+            background: rgba(168,85,247,0.2);
+            color: #c084fc;
+            border: 1px solid #a855f7;
+        }
+
+        .rarity-legendary {
+            background: rgba(234,179,8,0.2);
+            color: #facc15;
+            border: 1px solid #eab308;
+            animation: legendaryPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes legendaryPulse {
+            0%, 100% { box-shadow: 0 0 5px rgba(234,179,8,0.3); }
+            50% { box-shadow: 0 0 20px rgba(234,179,8,0.6); }
+        }
+
+        .equipment-effect {
+            color: rgba(255,255,255,0.7);
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        .equipment-stats {
+            color: #d4a84b;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .equipment-confirm-btn {
+            display: block;
+            margin: 0 auto;
+            padding: 12px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #d4a84b 0%, #b8860b 100%);
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .equipment-confirm-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(212,168,75,0.5);
+        }
+
+        .equipment-confirm-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 关卡信息 */
+        .stage-info {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            border: 2px solid #b8860b;
+            border-radius: 10px;
+            padding: 8px 20px;
+            z-index: 100;
+            text-align: center;
+        }
+
+        .stage-text {
+            color: #d4a84b;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .stage-progress {
+            color: rgba(255,255,255,0.6);
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        /* 当前装备显示 */
+        .equipped-items {
+            position: absolute;
+            bottom: 180px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .equipped-item {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.6);
+            border: 2px solid var(--equip-color, #666);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: help;
+            transition: all 0.3s ease;
+        }
+
+        .equipped-item:hover {
+            transform: scale(1.2);
+        }
+
+        /* 战斗中道具显示 */
+        .battle-items {
+            position: absolute;
+            bottom: 140px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .battle-item {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.7);
+            border: 2px solid var(--item-color, #d4a84b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .battle-item:hover {
+            transform: scale(1.15);
+            box-shadow: 0 0 15px var(--item-color, #d4a84b);
+        }
+
+        .battle-item-count {
+            position: absolute;
+            bottom: -5px;
+            right: -5px;
+            background: #ef4444;
+            color: #fff;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 1px 5px;
+            border-radius: 8px;
+            border: 1px solid #fff;
+        }
+
+        /* 精英怪样式 */
+        .elite-indicator {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            color: #fff;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 10px;
+            border: 2px solid #fff;
+            animation: eliteGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes eliteGlow {
+            0%, 100% { box-shadow: 0 0 5px rgba(168,85,247,0.5); }
+            50% { box-shadow: 0 0 15px rgba(168,85,247,0.8); }
+        }
+
+        /* ==================== 装备系统样式结束 ==================== */
+
+        .battle-log {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px;
+            max-height: 150px;
+            background: rgba(80,80,80,0.9);
+            border-radius: 10px;
+            padding: 15px;
+            overflow-y: auto;
+            z-index: 50;
+            border: 2px solid rgba(150,150,150,0.5);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .log-entry {
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 8px;
+            padding: 5px;
+            border-radius: 5px;
+            animation: logFadeIn 0.3s ease;
+        }
+
+        @keyframes logFadeIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .log-entry.player {
+            background: rgba(74,144,217,0.3);
+            border-left: 3px solid #4a90d9;
+        }
+
+        .log-entry.enemy {
+            background: rgba(201,76,76,0.3);
+            border-left: 3px solid #c94c4c;
+        }
+
+        .log-entry.system {
+            background: rgba(255,255,255,0.1);
+            border-left: 3px solid #999;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .game-over-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .game-over-modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+            padding: 40px 60px;
+            border-radius: 20px;
+            text-align: center;
+            border: 3px solid;
+            animation: modalPop 0.5s ease;
+        }
+
+        @keyframes modalPop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-content.victory {
+            border-color: #4a90d9;
+            box-shadow: 0 0 50px rgba(74,144,217,0.5);
+        }
+
+        .modal-content.defeat {
+            border-color: #c94c4c;
+            box-shadow: 0 0 50px rgba(201,76,76,0.5);
+        }
+
+        .modal-title {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .modal-title.victory {
+            color: #4a90d9;
+            text-shadow: 0 0 20px rgba(74,144,217,0.8);
+        }
+
+        .modal-title.defeat {
+            color: #c94c4c;
+            text-shadow: 0 0 20px rgba(201,76,76,0.8);
+        }
+
+        .modal-btn {
+            padding: 15px 40px;
+            font-size: 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .modal-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-restart {
+            background: linear-gradient(135deg, #4a90d9 0%, #2c5f8f 100%);
+            color: #fff;
+        }
+
+        .btn-load {
+            background: linear-gradient(135deg, #8b5a9f 0%, #5a3a6f 100%);
+            color: #fff;
+        }
+
+        /* 战斗结算界面 */
+        .reward-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1500;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .reward-overlay.show {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .reward-modal {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            border: 3px solid #fbbf24;
+            border-radius: 20px;
+            padding: 40px 60px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            animation: modalPop 0.5s ease;
+            box-shadow: 0 0 50px rgba(251, 191, 36, 0.4);
+        }
+
+        .reward-title {
+            font-size: 36px;
+            font-weight: bold;
+            color: #fbbf24;
+            text-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+            margin-bottom: 30px;
+        }
+
+        .reward-items {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .reward-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 15px 25px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+
+        .reward-item-icon {
+            font-size: 40px;
+        }
+
+        .reward-item-info {
+            text-align: left;
+        }
+
+        .reward-item-name {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .reward-item-desc {
+            color: rgba(255,255,255,0.6);
+            font-size: 14px;
+        }
+
+        .reward-chest-animation {
+            animation: chestBounce 1s ease infinite;
+        }
+
+        @keyframes chestBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .reward-btn {
+            padding: 15px 50px;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+
+        .reward-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+        }
+
+        .turn-indicator {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.6);
+            padding: 10px 30px;
+            border-radius: 25px;
+            border: 2px solid rgba(255,255,255,0.3);
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 100;
+        }
+
+        .turn-indicator.player-turn {
+            border-color: #4a90d9;
+            box-shadow: 0 0 20px rgba(74,144,217,0.5);
+        }
+
+        .turn-indicator.enemy-turn {
+            border-color: #c94c4c;
+            box-shadow: 0 0 20px rgba(201,76,76,0.5);
+        }
+
+        .save-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(139,90,159,0.8);
+            color: #fff;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 100;
+        }
+
+        .save-indicator.show {
+            opacity: 1;
+        }
+
+        .invincible {
+            animation: invinciblePulse 1s ease-in-out infinite;
+        }
+
+        @keyframes invinciblePulse {
+            0%, 100% { 
+                filter: brightness(1) drop-shadow(0 0 10px gold);
+                transform: scale(1);
+            }
+            50% { 
+                filter: brightness(1.3) drop-shadow(0 0 30px gold);
+                transform: scale(1.05);
+            }
+        }
+
+        .enemy-action {
+            position: absolute;
+            top: 250px;
+            right: 60px;
+            background: rgba(201,76,76,0.8);
+            color: #fff;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 50;
+        }
+
+        .enemy-action.show {
+            opacity: 1;
+        }
+
+        .skill-giveup {
+            background: linear-gradient(135deg, #6b6b6b 0%, #4a4a4a 100%);
+            border-color: #999;
+        }
+
+        @media (max-width: 1200px) {
+            .vs-text, .tate-text {
+                font-size: 60px;
+            }
+            
+            .skills-container {
+                left: 30px;
+                bottom: 60px;
+            }
+            
+            .skill-btn {
+                width: 140px;
+                padding: 12px;
+            }
+            
+            .skill-name {
+                font-size: 18px;
+            }
+            
+            .skill-desc {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="left-panel"></div>
+        <div class="right-panel"></div>
+        <div class="decorative-ring"></div>
+        
+        <div class="vs-title">
+            <div class="vs-text">VS</div>
+            <div class="tate-text">TATE</div>
+        </div>
+        
+        <div class="turn-indicator player-turn" id="turnIndicator">
+            你的回合
+        </div>
+        
+        <div class="save-indicator" id="saveIndicator">
+            游戏已自动保存
+        </div>
+        
+        <div class="player-area player-left">
+            <div class="avatar-container" id="playerAvatar">
+                <div class="avatar" id="playerAvatarIcon">⚔️</div>
+            </div>
+            <div class="battle-pet" id="battlePet" style="display: none;"></div>
+            <div class="status-bars">
+                <div class="hp-bar-container">
+                    <div class="hp-bar-bg">
+                        <div class="hp-bar-fill" id="playerHpBar" style="width: 100%;"></div>
+                    </div>
+                    <div class="hp-text" id="playerHpText">50/50 HP</div>
+                </div>
+                <div class="np-bar-container">
+                    <div class="np-text" id="playerNpText">NP: 15</div>
+                </div>
+                <div class="shield-indicator" id="shieldIndicator" style="display: none;">
+                    护盾: 0
+                </div>
+                <div class="defense-indicator" id="defenseIndicator" style="display: none;">
+                    减伤: 0
+                </div>
+            </div>
+        </div>
+        
+        <div class="player-area player-right">
+            <div class="avatar-container" id="enemyAvatar">
+                <div class="avatar">👹</div>
+            </div>
+            <div class="status-bars">
+                <div class="hp-bar-container">
+                    <div class="hp-text" id="enemyHpText">50/50 HP</div>
+                    <div class="hp-bar-bg">
+                        <div class="hp-bar-fill" id="enemyHpBar" style="width: 100%;"></div>
+                    </div>
+                </div>
+                <div class="np-bar-container">
+                    <div class="np-text" id="enemyNpText">NP: 15</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 关卡信息 -->
+        <div class="stage-info" id="stageInfo" style="display: none;">
+            <div class="stage-text" id="stageText">第 1 关</div>
+            <div class="stage-progress" id="stageProgress">1 / 2</div>
+        </div>
+
+        <!-- 当前装备显示 -->
+        <div class="equipped-items" id="equippedItems"></div>
+
+        <!-- 战斗中道具显示 -->
+        <div class="battle-items" id="battleItems"></div>
+
+        <div class="battle-log" id="battleLog"></div>
+        <div class="enemy-action" id="enemyAction">敌方正在行动...</div>
+        <div class="skills-container" id="skillsContainer"></div>
+        
+        <!-- 装备选择界面 -->
+        <div class="equipment-overlay" id="equipmentOverlay">
+            <div class="equipment-modal">
+                <div class="equipment-title">🎁 装备选择</div>
+                <div class="equipment-subtitle" id="equipmentSubtitle">击败敌人！请选择一件装备</div>
+                <div class="equipment-grid" id="equipmentGrid"></div>
+                <button class="equipment-confirm-btn" id="equipmentConfirmBtn" onclick="confirmEquipment()" disabled>确认选择</button>
+            </div>
+        </div>
+        
+        <!-- 战斗结算界面 -->
+        <div class="reward-overlay" id="rewardOverlay">
+            <div class="reward-modal">
+                <div class="reward-title">🎉 战斗胜利!</div>
+                <div class="reward-items" id="rewardItems"></div>
+                <button class="reward-btn" onclick="closeRewardAndShowGameOver()">继续</button>
+            </div>
+        </div>
+
+        <div class="game-over-modal" id="gameOverModal">
+            <div class="modal-content" id="modalContent">
+                <div class="modal-title" id="modalTitle">胜利!</div>
+                <button class="modal-btn btn-restart" onclick="restartGame()">重新开始</button>
+                <button class="modal-btn btn-load" onclick="loadGame()">读取存档</button>
+                <button class="modal-btn btn-exit" onclick="backToMainMenu()" style="background: linear-gradient(135deg, #666 0%, #444 100%);">返回主菜单</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 职业数据
+        const CLASSES = {
+            samurai: {
+                id: 'samurai',
+                name: '武士',
+                icon: '⚔️',
+                hp: 50,
+                maxHp: 50,
+                np: 20,
+                maxNp: 20,
+                color: '#c94c4c',
+                skills: [
+                    { id: 'juejin', name: '决进', npCost: 1, damage: 5, type: 'attack', description: '造成5点伤害', color: '#4a90d9' },
+                    { id: 'qianlong', name: '潜龙', npCost: 2, type: 'defense', description: '本回合无敌', color: '#c94c4c' },
+                    { id: 'jiushi', name: '酒诗', npCost: 4, heal: 10, type: 'heal', description: '回复10点HP', color: '#8b5a9f' }
+                ]
+            },
+            mage: {
+                id: 'mage',
+                name: '法师',
+                icon: '🔮',
+                hp: 40,
+                maxHp: 40,
+                np: 30,
+                maxNp: 30,
+                color: '#6b5ce7',
+                skills: [
+                    { id: 'fireball', name: '火球术', npCost: 2, damage: 8, type: 'attack', description: '造成8点伤害', color: '#ff6b35' },
+                    { id: 'magicShield', name: '魔力盾', npCost: 3, shield: 5, type: 'defense', description: '获得5点护盾', color: '#4ecdc4' },
+                    { id: 'elementalStorm', name: '元素风暴', npCost: 6, damage: 15, type: 'attack', description: '造成15点伤害', color: '#a855f7' }
+                ]
+            },
+            archer: {
+                id: 'archer',
+                name: '射手',
+                icon: '🏹',
+                hp: 45,
+                maxHp: 45,
+                np: 18,
+                maxNp: 18,
+                color: '#22c55e',
+                skills: [
+                    { id: 'preciseShot', name: '精准射击', npCost: 1, damage: 4, type: 'attack', description: '造成4点伤害', color: '#16a34a' },
+                    { id: 'rapidFire', name: '连射', npCost: 3, damage: 6, type: 'attack', description: '造成6点伤害', color: '#15803d' },
+                    { id: 'poisonArrow', name: '毒箭', npCost: 2, damage: 3, poison: 2, type: 'attack', description: '造成3点伤害+持续2伤害', color: '#84cc16' }
+                ]
+            },
+            guardian: {
+                id: 'guardian',
+                name: '盾卫',
+                icon: '🛡️',
+                hp: 70,
+                maxHp: 70,
+                np: 12,
+                maxNp: 12,
+                color: '#64748b',
+                skills: [
+                    { id: 'block', name: '格挡', npCost: 1, damageReduction: 3, type: 'defense', description: '下回合减伤3点', color: '#475569' },
+                    { id: 'shieldBash', name: '盾击', npCost: 2, damage: 3, type: 'attack', description: '造成3点伤害', color: '#334155' },
+                    { id: 'ironWall', name: '铁壁', npCost: 3, heal: 5, shield: 3, type: 'heal', description: '回复5HP+3护盾', color: '#1e293b' }
+                ]
+            }
+        };
+
+        // 难度数据
+        const DIFFICULTIES = {
+            easy: {
+                id: 'easy',
+                name: '简单',
+                bossHp: 40,
+                bossMaxHp: 40,
+                bossNp: 20,
+                bossMaxNp: 20,
+                bossAttackMin: 3,
+                bossAttackMax: 6,
+                bossHeavyMin: 6,
+                bossHeavyMax: 10,
+                bossHealMin: 5,
+                bossHealMax: 8,
+                aiBehavior: 'passive'
+            },
+            normal: {
+                id: 'normal',
+                name: '普通',
+                bossHp: 50,
+                bossMaxHp: 50,
+                bossNp: 30,
+                bossMaxNp: 30,
+                bossAttackMin: 5,
+                bossAttackMax: 10,
+                bossHeavyMin: 10,
+                bossHeavyMax: 15,
+                bossHealMin: 5,
+                bossHealMax: 10,
+                aiBehavior: 'balanced'
+            },
+            hard: {
+                id: 'hard',
+                name: '困难',
+                bossHp: 60,
+                bossMaxHp: 60,
+                bossNp: 40,
+                bossMaxNp: 40,
+                bossAttackMin: 8,
+                bossAttackMax: 12,
+                bossHeavyMin: 15,
+                bossHeavyMax: 20,
+                bossHealMin: 8,
+                bossHealMax: 12,
+                aiBehavior: 'aggressive'
+            }
+        };
+
+        // 游戏状态
+        let gameState = {
+            player: {
+                hp: 50,
+                maxHp: 50,
+                np: 20,
+                maxNp: 20,
+                invincible: false,
+                shield: 0,
+                damageReduction: 0
+            },
+            enemy: {
+                hp: 50,
+                maxHp: 50,
+                np: 30,
+                maxNp: 30,
+                poison: 0
+            },
+            turn: 'player',
+            gameOver: false,
+            isProcessing: false
+        };
+
+        let selectedClass = CLASSES.samurai;
+        let selectedDifficulty = DIFFICULTIES.normal;
+        let currentUser = localStorage.getItem('currentUser');
+
+        // 关卡系统数据
+        let stageSystem = {
+            currentStage: 0,
+            totalStages: 0,
+            stages: [],
+            equippedItems: [],
+            isBossStage: false
+        };
+
+        // 15件装备数据
+        const EQUIPMENTS = [
+            // 普通品质 (简单难度掉落)
+            {
+                id: 'wooden_sword', name: '木剑', icon: '🗡️', rarity: 'common', color: '#888',
+                effect: 'attack+2', description: '攻击力 +2', stats: { attackBonus: 2 }
+            },
+            {
+                id: 'leather_armor', name: '皮甲', icon: '🦺', rarity: 'common', color: '#888',
+                effect: 'hp+5', description: '最大HP +5', stats: { maxHpBonus: 5 }
+            },
+            {
+                id: 'small_potion', name: '小药水', icon: '🧪', rarity: 'common', color: '#888',
+                effect: 'np+3', description: 'NP上限 +3', stats: { maxNpBonus: 3 }
+            },
+            {
+                id: 'iron_ring', name: '铁戒指', icon: '💍', rarity: 'common', color: '#888',
+                effect: 'all+1', description: '攻击+1 HP+3', stats: { attackBonus: 1, maxHpBonus: 3 }
+            },
+            {
+                id: 'training_gloves', name: '训练手套', icon: '🧤', rarity: 'common', color: '#888',
+                effect: 'npRegen', description: '每回合回复1NP', stats: { npRegen: 1 }
+            },
+            // 稀有品质 (普通难度掉落)
+            {
+                id: 'iron_sword', name: '铁剑', icon: '⚔️', rarity: 'rare', color: '#3b82f6',
+                effect: 'attack+4', description: '攻击力 +4', stats: { attackBonus: 4 }
+            },
+            {
+                id: 'chain_mail', name: '锁子甲', icon: '👕', rarity: 'rare', color: '#3b82f6',
+                effect: 'hp+10', description: '最大HP +10', stats: { maxHpBonus: 10 }
+            },
+            {
+                id: 'mana_crystal', name: '魔力水晶', icon: '💎', rarity: 'rare', color: '#3b82f6',
+                effect: 'np+5', description: 'NP上限 +5', stats: { maxNpBonus: 5 }
+            },
+            {
+                id: 'vampiric_fang', name: '吸血獠牙', icon: '🦷', rarity: 'rare', color: '#3b82f6',
+                effect: 'lifeSteal', description: '造成伤害的20%转化为HP', stats: { lifeSteal: 0.2 }
+            },
+            {
+                id: 'swift_boots', name: '疾风靴', icon: '👢', rarity: 'rare', color: '#3b82f6',
+                effect: 'dodge', description: '15%概率闪避攻击', stats: { dodgeRate: 0.15 }
+            },
+            // 史诗品质 (困难难度小怪掉落)
+            {
+                id: 'flame_blade', name: '烈焰之刃', icon: '🔥', rarity: 'epic', color: '#a855f7',
+                effect: 'attack+6 burn', description: '攻击+6 附加灼烧', stats: { attackBonus: 6, burnDamage: 2 }
+            },
+            {
+                id: 'dragon_scale', name: '龙鳞甲', icon: '🐉', rarity: 'epic', color: '#a855f7',
+                effect: 'hp+15 shield', description: 'HP+15 战斗开始获得护盾', stats: { maxHpBonus: 15, startShield: 3 }
+            },
+            {
+                id: 'sage_staff', name: '贤者法杖', icon: '🔮', rarity: 'epic', color: '#a855f7',
+                effect: 'np+8 skillBoost', description: 'NP+8 技能伤害+20%', stats: { maxNpBonus: 8, skillBoost: 0.2 }
+            },
+            // 传说品质 (困难难度精英/Boss掉落)
+            {
+                id: 'excalibur', name: '王者之剑', icon: '👑', rarity: 'legendary', color: '#eab308',
+                effect: 'attack+10 crit', description: '攻击+10 30%暴击', stats: { attackBonus: 10, critRate: 0.3 }
+            },
+            {
+                id: 'phoenix_feather', name: '凤凰之羽', icon: '🪶', rarity: 'legendary', color: '#eab308',
+                effect: 'revive', description: '死亡时复活并回复30%HP', stats: { reviveHpPercent: 0.3 }
+            }
+        ];
+
+        // 检查是否已登录
+        if (!currentUser) {
+            alert('请先登录！');
+            window.location.href = 'login.html';
+        }
+
+        // 检查是否选择了职业和难度
+        const selectedClassId = localStorage.getItem('selectedClass');
+        const selectedDifficultyId = localStorage.getItem('selectedDifficulty');
+        
+        if (!selectedClassId) {
+            alert('请先选择职业！');
+            window.location.href = 'login.html';
+            throw new Error('未选择职业');
+        }
+        
+        if (!selectedDifficultyId) {
+            alert('请先选择难度！');
+            window.location.href = 'login.html';
+            throw new Error('未选择难度');
+        }
+
+        // 初始化关卡系统
+        function initStageSystem() {
+            const difficultyId = selectedDifficulty.id;
+            stageSystem.equippedItems = [];
+            stageSystem.currentStage = 0;
+
+            if (difficultyId === 'easy') {
+                // 简单模式: 1关小兵 + 1关Boss
+                stageSystem.totalStages = 2;
+                stageSystem.stages = [
+                    { type: 'minion', name: '小兵', hp: 20, maxHp: 20, np: 10, maxNp: 10, attackMin: 2, attackMax: 4, heavyMin: 4, heavyMax: 6, healMin: 3, healMax: 5, aiBehavior: 'passive', rewardTier: 'common' },
+                    { type: 'boss', name: 'Boss', hp: selectedDifficulty.bossHp, maxHp: selectedDifficulty.bossMaxHp, np: selectedDifficulty.bossNp, maxNp: selectedDifficulty.bossMaxNp, attackMin: selectedDifficulty.bossAttackMin, attackMax: selectedDifficulty.bossAttackMax, heavyMin: selectedDifficulty.bossHeavyMin, heavyMax: selectedDifficulty.bossHeavyMax, healMin: selectedDifficulty.bossHealMin, healMax: selectedDifficulty.bossHealMax, aiBehavior: selectedDifficulty.aiBehavior, rewardTier: 'rare' }
+                ];
+            } else if (difficultyId === 'normal') {
+                // 普通模式: 2关小兵 + 1关Boss
+                stageSystem.totalStages = 3;
+                stageSystem.stages = [
+                    { type: 'minion', name: '小兵', hp: 25, maxHp: 25, np: 12, maxNp: 12, attackMin: 3, attackMax: 5, heavyMin: 5, heavyMax: 8, healMin: 4, healMax: 6, aiBehavior: 'passive', rewardTier: 'common' },
+                    { type: 'minion', name: '强化小兵', hp: 30, maxHp: 30, np: 15, maxNp: 15, attackMin: 4, attackMax: 6, heavyMin: 6, heavyMax: 10, healMin: 5, healMax: 8, aiBehavior: 'balanced', rewardTier: 'rare' },
+                    { type: 'boss', name: 'Boss', hp: selectedDifficulty.bossHp, maxHp: selectedDifficulty.bossMaxHp, np: selectedDifficulty.bossNp, maxNp: selectedDifficulty.bossMaxNp, attackMin: selectedDifficulty.bossAttackMin, attackMax: selectedDifficulty.bossAttackMax, heavyMin: selectedDifficulty.bossHeavyMin, heavyMax: selectedDifficulty.bossHeavyMax, healMin: selectedDifficulty.bossHealMin, healMax: selectedDifficulty.bossHealMax, aiBehavior: selectedDifficulty.aiBehavior, rewardTier: 'epic' }
+                ];
+            } else {
+                // 困难模式: 3关小兵 + 1关精英 + 1关Boss
+                stageSystem.totalStages = 5;
+                stageSystem.stages = [
+                    { type: 'minion', name: '小兵', hp: 30, maxHp: 30, np: 15, maxNp: 15, attackMin: 4, attackMax: 6, heavyMin: 6, heavyMax: 10, healMin: 5, healMax: 8, aiBehavior: 'passive', rewardTier: 'rare' },
+                    { type: 'minion', name: '强化小兵', hp: 35, maxHp: 35, np: 18, maxNp: 18, attackMin: 5, attackMax: 7, heavyMin: 8, heavyMax: 12, healMin: 6, healMax: 9, aiBehavior: 'balanced', rewardTier: 'rare' },
+                    { type: 'minion', name: '精锐小兵', hp: 40, maxHp: 40, np: 20, maxNp: 20, attackMin: 6, attackMax: 8, heavyMin: 10, heavyMax: 14, healMin: 7, healMax: 10, aiBehavior: 'aggressive', rewardTier: 'epic' },
+                    { type: 'elite', name: '精英怪', hp: 50, maxHp: 50, np: 25, maxNp: 25, attackMin: 7, attackMax: 10, heavyMin: 12, heavyMax: 16, healMin: 8, healMax: 12, aiBehavior: 'aggressive', rewardTier: 'epic' },
+                    { type: 'boss', name: 'Boss', hp: selectedDifficulty.bossHp, maxHp: selectedDifficulty.bossMaxHp, np: selectedDifficulty.bossNp, maxNp: selectedDifficulty.bossMaxNp, attackMin: selectedDifficulty.bossAttackMin, attackMax: selectedDifficulty.bossAttackMax, heavyMin: selectedDifficulty.bossHeavyMin, heavyMax: selectedDifficulty.bossHeavyMax, healMin: selectedDifficulty.bossHealMin, healMax: selectedDifficulty.bossHealMax, aiBehavior: selectedDifficulty.aiBehavior, rewardTier: 'legendary' }
+                ];
+            }
+
+            document.getElementById('stageInfo').style.display = 'block';
+            updateStageInfo();
+        }
+
+        // 更新关卡信息显示
+        function updateStageInfo() {
+            const stage = stageSystem.stages[stageSystem.currentStage];
+            const stageText = stage.type === 'boss' ? 'Boss战' : (stage.type === 'elite' ? '精英战' : `第 ${stageSystem.currentStage + 1} 关`);
+            document.getElementById('stageText').textContent = stageText;
+            document.getElementById('stageProgress').textContent = `${stageSystem.currentStage + 1} / ${stageSystem.totalStages}`;
+
+            // 更新敌人名称显示
+            const enemyNameEl = document.querySelector('.right-panel .character-name');
+            if (enemyNameEl) {
+                enemyNameEl.textContent = stage.name;
+            }
+
+            // 精英怪标记
+            const enemyAvatar = document.querySelector('.right-panel .avatar');
+            if (enemyAvatar) {
+                const existingElite = enemyAvatar.querySelector('.elite-indicator');
+                if (existingElite) existingElite.remove();
+                if (stage.type === 'elite') {
+                    const eliteBadge = document.createElement('div');
+                    eliteBadge.className = 'elite-indicator';
+                    eliteBadge.textContent = 'ELITE';
+                    enemyAvatar.appendChild(eliteBadge);
+                }
+            }
+        }
+
+        // 加载当前关卡敌人
+        function loadCurrentStage() {
+            const stage = stageSystem.stages[stageSystem.currentStage];
+            if (!stage) return false;
+
+            stageSystem.isBossStage = stage.type === 'boss';
+
+            // 重置敌人状态
+            gameState.enemy.hp = stage.hp;
+            gameState.enemy.maxHp = stage.maxHp;
+            gameState.enemy.np = stage.np;
+            gameState.enemy.maxNp = stage.maxNp;
+            gameState.enemy.poison = 0;
+
+            // 应用装备效果（开始护盾）
+            const startShield = getEquippedStat('startShield');
+            if (startShield > 0) {
+                gameState.player.shield = startShield;
+            }
+
+            updateStageInfo();
+            updateUI();
+            addLog(`=== ${stage.name} 出现！===`, 'system');
+            return true;
+        }
+
+        // 进入下一关
+        function nextStage() {
+            stageSystem.currentStage++;
+
+            if (stageSystem.currentStage >= stageSystem.totalStages) {
+                // 所有关卡完成，胜利
+                showGameOver(true);
+                return;
+            }
+
+            // 回复一定HP和NP
+            const healPercent = 0.3;
+            const npRecover = Math.floor(gameState.player.maxNp * 0.5);
+            const hpRecover = Math.floor(gameState.player.maxHp * healPercent);
+
+            gameState.player.hp = Math.min(gameState.player.maxHp, gameState.player.hp + hpRecover);
+            gameState.player.np = Math.min(gameState.player.maxNp, gameState.player.np + npRecover);
+
+            addLog(`关卡通过！回复 ${hpRecover} HP 和 ${npRecover} NP`, 'system');
+
+            // 重置玩家状态
+            gameState.player.invincible = false;
+            gameState.player.shield = 0;
+            gameState.player.damageReduction = 0;
+            document.getElementById('playerAvatar').classList.remove('invincible');
+            gameState.turn = 'player';
+            gameState.isProcessing = false;
+
+            // 显示装备选择
+            showEquipmentSelect();
+        }
+
+        // 显示装备选择界面
+        function showEquipmentSelect() {
+            const stage = stageSystem.stages[stageSystem.currentStage - 1];
+            const rewardTier = stage ? stage.rewardTier : 'common';
+
+            // 根据关卡品质筛选可用装备
+            let availableEquipments = EQUIPMENTS.filter(e => {
+                if (rewardTier === 'common') return e.rarity === 'common';
+                if (rewardTier === 'rare') return e.rarity === 'common' || e.rarity === 'rare';
+                if (rewardTier === 'epic') return e.rarity === 'rare' || e.rarity === 'epic';
+                if (rewardTier === 'legendary') return e.rarity === 'epic' || e.rarity === 'legendary';
+                return true;
+            });
+
+            // 随机选择3件
+            const selectedEquipments = [];
+            const tempPool = [...availableEquipments];
+            for (let i = 0; i < 3 && tempPool.length > 0; i++) {
+                const idx = Math.floor(Math.random() * tempPool.length);
+                selectedEquipments.push(tempPool[idx]);
+                tempPool.splice(idx, 1);
+            }
+
+            // 渲染装备选择界面
+            const grid = document.getElementById('equipmentGrid');
+            grid.innerHTML = '';
+
+            selectedEquipments.forEach((equip, index) => {
+                const card = document.createElement('div');
+                card.className = 'equipment-card';
+                card.style.setProperty('--equip-color', equip.color);
+                card.style.setProperty('--equip-glow', equip.color + '4d');
+                card.onclick = () => selectEquipment(index, card);
+                card.dataset.index = index;
+                card.dataset.equipId = equip.id;
+
+                const rarityClass = `rarity-${equip.rarity}`;
+                const rarityText = { common: '普通', rare: '稀有', epic: '史诗', legendary: '传说' }[equip.rarity];
+
+                card.innerHTML = `
+                    <span class="equipment-icon">${equip.icon}</span>
+                    <div class="equipment-name">${equip.name}</div>
+                    <div class="equipment-rarity ${rarityClass}">${rarityText}</div>
+                    <div class="equipment-effect">${equip.description}</div>
+                `;
+
+                grid.appendChild(card);
+            });
+
+            document.getElementById('equipmentSubtitle').textContent = `击败${stage.name}！请选择一件装备`;
+            document.getElementById('equipmentConfirmBtn').disabled = true;
+            document.getElementById('equipmentOverlay').classList.add('show');
+        }
+
+        // 选择装备
+        let selectedEquipmentIndex = -1;
+        function selectEquipment(index, cardElement) {
+            document.querySelectorAll('.equipment-card').forEach(c => c.classList.remove('selected'));
+            cardElement.classList.add('selected');
+            selectedEquipmentIndex = index;
+            document.getElementById('equipmentConfirmBtn').disabled = false;
+        }
+
+        // 确认装备选择
+        function confirmEquipment() {
+            const cards = document.querySelectorAll('.equipment-card');
+            const selectedCard = cards[selectedEquipmentIndex];
+            if (!selectedCard) return;
+
+            const equipId = selectedCard.dataset.equipId;
+            const equip = EQUIPMENTS.find(e => e.id === equipId);
+            if (equip) {
+                stageSystem.equippedItems.push(equip);
+                applyEquipmentEffects();
+                updateEquippedDisplay();
+                addLog(`获得装备：${equip.name}！${equip.description}`, 'system');
+
+                // 检查装备成就
+                checkEquipmentAchievements(equip);
+            }
+
+            document.getElementById('equipmentOverlay').classList.remove('show');
+            selectedEquipmentIndex = -1;
+
+            // 加载下一关
+            setTimeout(() => {
+                loadCurrentStage();
+                addLog('你的回合', 'player');
+            }, 500);
+        }
+
+        // 检查装备类成就
+        function checkEquipmentAchievements(equip) {
+            if (!currentUser) return;
+            const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+            if (!users[currentUser]) return;
+
+            if (!users[currentUser].achievements) users[currentUser].achievements = { earned: [], progress: {}, newlyUnlocked: 0 };
+            if (!users[currentUser].achievements.progress) users[currentUser].achievements.progress = {};
+
+            const earned = users[currentUser].achievements.earned;
+
+            // 首次获得装备成就
+            if (!earned.includes('first_equipment')) {
+                earned.push('first_equipment');
+                users[currentUser].achievements.newlyUnlocked = (users[currentUser].achievements.newlyUnlocked || 0) + 1;
+            }
+
+            // 记录获得的装备ID（当局游戏）
+            if (!users[currentUser].achievements.progress.equipmentObtained) {
+                users[currentUser].achievements.progress.equipmentObtained = [];
+            }
+            if (!users[currentUser].achievements.progress.equipmentObtained.includes(equip.id)) {
+                users[currentUser].achievements.progress.equipmentObtained.push(equip.id);
+            }
+
+            const uniqueEquipmentCount = users[currentUser].achievements.progress.equipmentObtained.length;
+
+            // 装备收藏家成就（5件）
+            if (uniqueEquipmentCount >= 5 && !earned.includes('equipment_collector_5')) {
+                earned.push('equipment_collector_5');
+                users[currentUser].achievements.newlyUnlocked = (users[currentUser].achievements.newlyUnlocked || 0) + 1;
+            }
+
+            // 装备大师成就（10件）
+            if (uniqueEquipmentCount >= 10 && !earned.includes('equipment_collector_10')) {
+                earned.push('equipment_collector_10');
+                users[currentUser].achievements.newlyUnlocked = (users[currentUser].achievements.newlyUnlocked || 0) + 1;
+            }
+
+            // 传说装备成就
+            if (equip.rarity === 'legendary' && !earned.includes('legendary_equipment')) {
+                earned.push('legendary_equipment');
+                users[currentUser].achievements.newlyUnlocked = (users[currentUser].achievements.newlyUnlocked || 0) + 1;
+            }
+
+            localStorage.setItem('vsFateUsers', JSON.stringify(users));
+        }
+
+        // 应用装备效果
+        function applyEquipmentEffects() {
+            // 重置基础属性
+            gameState.player.maxHp = selectedClass.maxHp;
+            gameState.player.maxNp = selectedClass.maxNp;
+
+            // 应用所有装备加成
+            stageSystem.equippedItems.forEach(equip => {
+                if (equip.stats.maxHpBonus) {
+                    gameState.player.maxHp += equip.stats.maxHpBonus;
+                }
+                if (equip.stats.maxNpBonus) {
+                    gameState.player.maxNp += equip.stats.maxNpBonus;
+                }
+            });
+
+            // 确保当前HP/NP不超过新上限
+            gameState.player.hp = Math.min(gameState.player.hp, gameState.player.maxHp);
+            gameState.player.np = Math.min(gameState.player.np, gameState.player.maxNp);
+        }
+
+        // 获取装备属性总和
+        function getEquippedStat(statName) {
+            return stageSystem.equippedItems.reduce((sum, equip) => {
+                return sum + (equip.stats[statName] || 0);
+            }, 0);
+        }
+
+        // 更新装备显示
+        function updateEquippedDisplay() {
+            const container = document.getElementById('equippedItems');
+            container.innerHTML = '';
+            stageSystem.equippedItems.forEach(equip => {
+                const item = document.createElement('div');
+                item.className = 'equipped-item';
+                item.style.setProperty('--equip-color', equip.color);
+                item.textContent = equip.icon;
+                item.title = `${equip.name}: ${equip.description}`;
+                container.appendChild(item);
+            });
+        }
+
+        // 加载战斗中携带的道具
+        function loadBattleItems() {
+            const container = document.getElementById('battleItems');
+            container.innerHTML = '';
+            
+            if (!currentUser) return;
+            
+            const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+            if (!users[currentUser] || !users[currentUser].inventory) return;
+            
+            const equippedItems = users[currentUser].inventory.filter(i => i.equipped);
+            
+            equippedItems.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'battle-item';
+                div.style.setProperty('--item-color', item.color);
+                div.textContent = item.icon;
+                div.title = `${item.name}: ${item.effect}`;
+                div.onclick = () => useBattleItem(item);
+                container.appendChild(div);
+            });
+        }
+
+        // 使用战斗道具
+        function useBattleItem(item) {
+            if (gameState.isProcessing || gameState.turn !== 'player' || gameState.gameOver) {
+                return;
+            }
+            
+            gameState.isProcessing = true;
+            
+            // 应用道具效果
+            let effectMsg = `使用了 ${item.name}！`;
+            
+            // 恢复HP
+            if (item.stats.hp) {
+                const heal = Math.min(item.stats.hp, gameState.player.maxHp - gameState.player.hp);
+                gameState.player.hp += heal;
+                effectMsg += ` 回复${heal}HP`;
+                showHealNumber(heal, 'player');
+            }
+            
+            // 恢复NP
+            if (item.stats.np) {
+                const npRecover = Math.min(item.stats.np, gameState.player.maxNp - gameState.player.np);
+                gameState.player.np += npRecover;
+                effectMsg += ` 回复${npRecover}NP`;
+            }
+            
+            // 攻击加成
+            if (item.stats.attackBoost) {
+                gameState.player.attackBoost = item.stats.attackBoost;
+                gameState.player.attackBoostDuration = item.stats.duration || 2;
+                effectMsg += ` 攻击+${(item.stats.attackBoost * 100).toFixed(0)}%(${gameState.player.attackBoostDuration}回合)`;
+            }
+            
+            // 全属性加成
+            if (item.stats.allBoost) {
+                gameState.player.allBoost = item.stats.allBoost;
+                gameState.player.allBoostDuration = item.stats.duration || 3;
+                effectMsg += ` 全属性+${(item.stats.allBoost * 100).toFixed(0)}%(${gameState.player.allBoostDuration}回合)`;
+            }
+            
+            // 护盾
+            if (item.stats.shieldPercent) {
+                const shieldAmount = Math.floor(gameState.player.maxHp * item.stats.shieldPercent);
+                gameState.player.shield += shieldAmount;
+                effectMsg += ` 护盾+${shieldAmount}`;
+            }
+            
+            addLog(effectMsg, 'player');
+
+            // 检查道具使用成就
+            checkItemUseAchievement();
+
+            // 从背包中移除该道具
+            const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+            if (users[currentUser] && users[currentUser].inventory) {
+                const idx = users[currentUser].inventory.findIndex(i => i.instanceId === item.instanceId);
+                if (idx !== -1) {
+                    users[currentUser].inventory.splice(idx, 1);
+                    localStorage.setItem('vsFateUsers', JSON.stringify(users));
+                }
+            }
+            
+            // 更新道具显示
+            loadBattleItems();
+            updateUI();
+            
+            // 结束玩家回合
+            setTimeout(() => {
+                gameState.turn = 'enemy';
+                updateTurnIndicator();
+                updateUI();
+                enemyTurn();
+            }, 1000);
+        }
+
+        // 检查道具使用成就
+        function checkItemUseAchievement() {
+            if (!currentUser) return;
+            const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+            if (!users[currentUser]) return;
+
+            if (!users[currentUser].achievements) users[currentUser].achievements = { earned: [], progress: {}, newlyUnlocked: 0 };
+            const earned = users[currentUser].achievements.earned;
+
+            // 道具专家成就
+            if (!earned.includes('item_user')) {
+                earned.push('item_user');
+                users[currentUser].achievements.newlyUnlocked = (users[currentUser].achievements.newlyUnlocked || 0) + 1;
+                localStorage.setItem('vsFateUsers', JSON.stringify(users));
+            }
+        }
+
+        // 获取携带的宠物加成
+        function getPetBonus() {
+            if (!currentUser) return 0;
+            const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+            if (!users[currentUser]) return 0;
+            const equippedPetId = users[currentUser].equippedPet;
+            if (!equippedPetId) return 0;
+
+            const petData = {
+                'pet_slime': { name: '史莱姆', statBonus: 1 },
+                'pet_chicken': { name: '小鸡', statBonus: 1 },
+                'pet_ant': { name: '蚂蚁', statBonus: 1 },
+                'pet_frog': { name: '青蛙', statBonus: 1 },
+                'pet_cat': { name: '猫咪', statBonus: 2 },
+                'pet_dog': { name: '狗狗', statBonus: 2 },
+                'pet_rabbit': { name: '兔子', statBonus: 2 },
+                'pet_wolf': { name: '战狼', statBonus: 3 },
+                'pet_dragon': { name: '幼龙', statBonus: 3 },
+                'pet_phoenix': { name: '凤凰', statBonus: 4 }
+            };
+
+            const pet = petData[equippedPetId];
+            return pet ? pet.statBonus : 0;
+        }
+
+        // 计算装备加成后的技能伤害
+        function getSkillDamage(baseDamage) {
+            const attackBonus = getEquippedStat('attackBonus');
+            const skillBoost = getEquippedStat('skillBoost');
+            const petBonus = getPetBonus();
+            let damage = baseDamage + attackBonus + petBonus;
+            if (skillBoost > 0) {
+                damage = Math.floor(damage * (1 + skillBoost));
+            }
+            return damage;
+        }
+
+        // 初始化游戏
+        function initGame() {
+            // 获取选择的职业和难度
+            const classId = localStorage.getItem('selectedClass') || 'samurai';
+            const difficultyId = localStorage.getItem('selectedDifficulty') || 'normal';
+            selectedClass = CLASSES[classId];
+            selectedDifficulty = DIFFICULTIES[difficultyId];
+
+            // 获取宠物加成
+            const petBonus = getPetBonus();
+
+            // 初始化玩家状态（应用宠物加成）
+            gameState.player.hp = selectedClass.hp + petBonus;
+            gameState.player.np = selectedClass.np + petBonus;
+            gameState.player.maxHp = selectedClass.maxHp + petBonus;
+            gameState.player.maxNp = selectedClass.maxNp + petBonus;
+            gameState.player.invincible = false;
+            gameState.player.shield = 0;
+            gameState.player.damageReduction = 0;
+            gameState.player.attackBoost = 0;
+            gameState.player.attackBoostDuration = 0;
+            gameState.player.allBoost = 0;
+            gameState.player.allBoostDuration = 0;
+
+            // 初始化关卡系统
+            initStageSystem();
+
+            // 更新头像
+            document.getElementById('playerAvatarIcon').textContent = selectedClass.icon;
+
+            // 生成技能按钮
+            renderSkillButtons();
+
+            // 加载战斗中携带的道具
+            loadBattleItems();
+
+            // 加载第一关
+            loadCurrentStage();
+            updateUI();
+
+            // 显示宠物信息和头像
+            const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+            const equippedPetId = users[currentUser]?.equippedPet;
+            if (equippedPetId) {
+                const petData = {
+                    'pet_slime': { name: '史莱姆', icon: '🟢', rarity: 'common' },
+                    'pet_chicken': { name: '小鸡', icon: '🐤', rarity: 'common' },
+                    'pet_ant': { name: '蚂蚁', icon: '🐜', rarity: 'common' },
+                    'pet_frog': { name: '青蛙', icon: '🐸', rarity: 'common' },
+                    'pet_cat': { name: '猫咪', icon: '🐱', rarity: 'rare' },
+                    'pet_dog': { name: '狗狗', icon: '🐶', rarity: 'rare' },
+                    'pet_rabbit': { name: '兔子', icon: '🐰', rarity: 'rare' },
+                    'pet_wolf': { name: '战狼', icon: '🐺', rarity: 'epic' },
+                    'pet_dragon': { name: '幼龙', icon: '🐲', rarity: 'epic' },
+                    'pet_phoenix': { name: '凤凰', icon: '🔥', rarity: 'legendary' }
+                };
+                const pet = petData[equippedPetId];
+                if (pet) {
+                    const battlePetEl = document.getElementById('battlePet');
+                    battlePetEl.textContent = pet.icon;
+                    battlePetEl.className = `battle-pet ${pet.rarity}`;
+                    battlePetEl.style.display = 'flex';
+                    addLog(`🐾 宠物 ${pet.name} 助战！全属性+${petBonus}`, 'system');
+                }
+            } else {
+                document.getElementById('battlePet').style.display = 'none';
+            }
+
+            addLog(`战斗开始！难度：${selectedDifficulty.name}，共 ${stageSystem.totalStages} 关`, 'system');
+
+            // 检查玩家NP是否为0
+            if (gameState.player.np <= 0) {
+                addLog('你的NP不足，跳过回合！', 'system');
+                if (checkBothNPZero()) {
+                    return;
+                }
+                setTimeout(() => {
+                    gameState.turn = 'enemy';
+                    updateTurnIndicator();
+                    updateUI();
+                    enemyTurn();
+                }, 1000);
+            } else {
+                addLog('你的回合', 'player');
+            }
+        }
+
+        // 生成技能按钮
+        function renderSkillButtons() {
+            const container = document.getElementById('skillsContainer');
+            container.innerHTML = '';
+            
+            selectedClass.skills.forEach(skill => {
+                const btn = document.createElement('button');
+                btn.id = 'btn' + skill.id.charAt(0).toUpperCase() + skill.id.slice(1);
+                btn.className = 'skill-btn';
+                btn.style.background = `linear-gradient(135deg, ${skill.color} 0%, ${adjustColor(skill.color, -30)} 100%)`;
+                btn.style.borderColor = skill.color;
+                btn.style.boxShadow = `0 6px 0 ${adjustColor(skill.color, -50)}, 0 8px 20px ${skill.color}66`;
+                btn.onclick = () => useSkill(skill.id);
+                
+                btn.innerHTML = `
+                    <div class="skill-name">${skill.name}</div>
+                    <div class="skill-desc">${skill.description}<br>消耗: ${skill.npCost}NP</div>
+                `;
+                
+                container.appendChild(btn);
+            });
+            
+            // 添加放弃战斗按钮
+            const giveupBtn = document.createElement('button');
+            giveupBtn.id = 'btnGiveup';
+            giveupBtn.className = 'skill-btn skill-giveup';
+            giveupBtn.onclick = () => useSkill('giveup');
+            giveupBtn.innerHTML = `
+                <div class="skill-name">放弃战斗</div>
+                <div class="skill-desc">直接结束对局</div>
+            `;
+            container.appendChild(giveupBtn);
+        }
+
+        // 使用技能
+        function useSkill(skillId) {
+            if (gameState.isProcessing || gameState.turn !== 'player' || gameState.gameOver) {
+                return;
+            }
+            
+            // 放弃战斗特殊处理
+            if (skillId === 'giveup') {
+                gameState.player.hp = 0;
+                addLog('你放弃了战斗...', 'system');
+                updateUI();
+                checkGameOver();
+                return;
+            }
+            
+            const skill = selectedClass.skills.find(s => s.id === skillId);
+            if (!skill) return;
+            
+            if (gameState.player.np < skill.npCost) {
+                addLog(`NP不足！需要${skill.npCost}点NP`, 'system');
+                return;
+            }
+            
+            gameState.isProcessing = true;
+            
+            const btn = document.getElementById('btn' + skillId.charAt(0).toUpperCase() + skillId.slice(1));
+            if (btn) {
+                btn.classList.add('clicking');
+                setTimeout(() => btn.classList.remove('clicking'), 200);
+            }
+            
+            gameState.player.np -= skill.npCost;
+            
+            // 播放技能特效
+            playPlayerSkillEffect(skillId);
+            
+            // 计算装备加成后的伤害
+            let actualDamage = 0;
+
+            switch (skillId) {
+                case 'juejin':
+                case 'fireball':
+                case 'elementalStorm':
+                case 'preciseShot':
+                case 'rapidFire':
+                case 'shieldBash':
+                    actualDamage = getSkillDamage(skill.damage);
+                    gameState.enemy.hp = Math.max(0, gameState.enemy.hp - actualDamage);
+                    addLog(`你使用了【${skill.name}】，对敌方造成${actualDamage}点伤害！`, 'player');
+                    showDamageNumber(actualDamage, 'enemy');
+
+                    // 吸血效果
+                    const lifeSteal = getEquippedStat('lifeSteal');
+                    if (lifeSteal > 0 && actualDamage > 0) {
+                        const stealHp = Math.floor(actualDamage * lifeSteal);
+                        if (stealHp > 0) {
+                            gameState.player.hp = Math.min(gameState.player.maxHp, gameState.player.hp + stealHp);
+                            addLog(`💉 吸血效果回复${stealHp}点HP！`, 'system');
+                            showHealNumber(stealHp, 'player');
+                        }
+                    }
+                    break;
+
+                case 'poisonArrow':
+                    actualDamage = getSkillDamage(skill.damage);
+                    gameState.enemy.hp = Math.max(0, gameState.enemy.hp - actualDamage);
+                    addLog(`你使用了【${skill.name}】，造成${actualDamage}点伤害并附加中毒！下回合敌人受到${skill.poison}点持续伤害`, 'player');
+                    showDamageNumber(actualDamage, 'enemy');
+                    if (!gameState.enemy.poison) gameState.enemy.poison = 0;
+                    gameState.enemy.poison += skill.poison;
+
+                    // 吸血效果
+                    const poisonLifeSteal = getEquippedStat('lifeSteal');
+                    if (poisonLifeSteal > 0 && actualDamage > 0) {
+                        const stealHp = Math.floor(actualDamage * poisonLifeSteal);
+                        if (stealHp > 0) {
+                            gameState.player.hp = Math.min(gameState.player.maxHp, gameState.player.hp + stealHp);
+                            addLog(`💉 吸血效果回复${stealHp}点HP！`, 'system');
+                            showHealNumber(stealHp, 'player');
+                        }
+                    }
+                    break;
+
+                case 'qianlong':
+                    gameState.player.invincible = true;
+                    document.getElementById('playerAvatar').classList.add('invincible');
+                    addLog(`你使用了【${skill.name}】，本回合获得无敌状态！`, 'player');
+                    break;
+
+                case 'magicShield':
+                    gameState.player.shield += skill.shield;
+                    addLog(`你使用了【${skill.name}】，获得${skill.shield}点护盾！`, 'player');
+                    break;
+
+                case 'block':
+                    gameState.player.damageReduction += skill.damageReduction;
+                    addLog(`你使用了【${skill.name}】，下回合获得${skill.damageReduction}点减伤！`, 'player');
+                    break;
+
+                case 'jiushi':
+                    const jiushiHeal = Math.min(skill.heal, gameState.player.maxHp - gameState.player.hp);
+                    gameState.player.hp = Math.min(gameState.player.maxHp, gameState.player.hp + skill.heal);
+                    addLog(`你使用了【${skill.name}】，回复${jiushiHeal}点HP！`, 'player');
+                    showHealNumber(jiushiHeal, 'player');
+                    break;
+
+                case 'ironWall':
+                    const ironHeal = Math.min(skill.heal, gameState.player.maxHp - gameState.player.hp);
+                    gameState.player.hp = Math.min(gameState.player.maxHp, gameState.player.hp + skill.heal);
+                    gameState.player.shield += skill.shield;
+                    addLog(`你使用了【${skill.name}】，回复${ironHeal}点HP并获得${skill.shield}点护盾！`, 'player');
+                    if (ironHeal > 0) showHealNumber(ironHeal, 'player');
+                    break;
+            }
+
+            saveGame();
+            updateUI();
+
+            if (checkGameOver()) {
+                gameState.isProcessing = false;
+                return;
+            }
+
+            if (checkBothNPZero()) {
+                gameState.isProcessing = false;
+                return;
+            }
+
+            gameState.turn = 'enemy';
+            updateTurnIndicator();
+            updateUI();
+
+            setTimeout(() => {
+                enemyTurn();
+            }, 1000);
+        }
+
+        // 获取当前关卡敌人配置
+        function getCurrentEnemyConfig() {
+            const stage = stageSystem.stages[stageSystem.currentStage];
+            if (!stage) return selectedDifficulty;
+            return {
+                bossAttackMin: stage.attackMin,
+                bossAttackMax: stage.attackMax,
+                bossHeavyMin: stage.heavyMin,
+                bossHeavyMax: stage.heavyMax,
+                bossHealMin: stage.healMin,
+                bossHealMax: stage.healMax,
+                aiBehavior: stage.aiBehavior
+            };
+        }
+
+        // 敌方回合
+        function enemyTurn() {
+            document.getElementById('enemyAction').classList.add('show');
+
+            setTimeout(() => {
+                // 敌方中毒伤害
+                if (gameState.enemy.poison > 0) {
+                    const poisonDmg = gameState.enemy.poison;
+                    gameState.enemy.hp = Math.max(0, gameState.enemy.hp - poisonDmg);
+                    gameState.enemy.poison = 0;
+                    addLog(`敌人毒发！受到${poisonDmg}点持续伤害！`, 'system');
+                }
+
+                if (checkGameOver()) {
+                    document.getElementById('enemyAction').classList.remove('show');
+                    updateUI();
+                    return;
+                }
+
+                if (gameState.enemy.np <= 0) {
+                    document.getElementById('enemyAction').classList.remove('show');
+                    addLog('敌方NP不足，无法行动！', 'enemy');
+
+                    gameState.player.invincible = false;
+                    document.getElementById('playerAvatar').classList.remove('invincible');
+
+                    updateUI();
+
+                    if (checkBothNPZero()) {
+                        return;
+                    }
+
+                    setTimeout(() => {
+                        gameState.turn = 'player';
+                        gameState.isProcessing = false;
+                        // NP回复装备效果
+                        const npRegen = getEquippedStat('npRegen');
+                        if (npRegen > 0) {
+                            gameState.player.np = Math.min(gameState.player.maxNp, gameState.player.np + npRegen);
+                            addLog(`🧤 训练手套效果：回复${npRegen}点NP`, 'system');
+                        }
+                        updateTurnIndicator();
+                        updateUI();
+                        addLog('你的回合', 'player');
+                    }, 500);
+                    return;
+                }
+
+                // 使用当前关卡配置
+                const enemyConfig = getCurrentEnemyConfig();
+                let action;
+                const aiBehavior = enemyConfig.aiBehavior;
+
+                if (aiBehavior === 'passive') {
+                    // 简单难度
+                    if (gameState.enemy.hp < gameState.enemy.maxHp * 0.3 && gameState.enemy.np >= 4) {
+                        action = 'heal';
+                    } else if (gameState.enemy.np >= 1) {
+                        const actions = ['attack', 'attack', 'attack', 'heavy'];
+                        action = actions[Math.floor(Math.random() * actions.length)];
+                    } else {
+                        action = null;
+                    }
+                } else if (aiBehavior === 'aggressive') {
+                    // 困难难度
+                    if (gameState.enemy.np >= 4) {
+                        if (gameState.enemy.hp < gameState.enemy.maxHp * 0.4) {
+                            action = Math.random() > 0.3 ? 'heal' : 'heavy';
+                        } else {
+                            action = Math.random() > 0.2 ? 'heavy' : 'attack';
+                        }
+                    } else if (gameState.enemy.np >= 2) {
+                        action = 'heavy';
+                    } else if (gameState.enemy.np >= 1) {
+                        action = 'attack';
+                    } else {
+                        action = null;
+                    }
+                } else {
+                    // 普通难度
+                    if (gameState.enemy.np >= 4) {
+                        const actions = ['attack', 'heavy', 'heal'];
+                        action = actions[Math.floor(Math.random() * actions.length)];
+                    } else if (gameState.enemy.np >= 2) {
+                        action = Math.random() > 0.5 ? 'attack' : 'heavy';
+                    } else if (gameState.enemy.np >= 1) {
+                        action = 'attack';
+                    } else {
+                        action = null;
+                    }
+                }
+
+                if (action) {
+                    // 播放敌方技能特效
+                    playEnemySkillEffect(action);
+
+                    switch (action) {
+                        case 'attack':
+                            gameState.enemy.np = Math.max(0, gameState.enemy.np - 1);
+                            if (gameState.player.invincible) {
+                                addLog('敌方消耗1NP发动攻击，但你处于无敌状态！', 'enemy');
+                                showDamageNumber(0, 'player');
+                            } else {
+                                let damage = Math.floor(Math.random() * (enemyConfig.bossAttackMax - enemyConfig.bossAttackMin + 1)) + enemyConfig.bossAttackMin;
+
+                                // 闪避判定
+                                const dodgeRate = getEquippedStat('dodgeRate');
+                                if (dodgeRate > 0 && Math.random() < dodgeRate) {
+                                    addLog('⚡ 你闪避了敌人的攻击！', 'system');
+                                    damage = 0;
+                                }
+
+                                if (gameState.player.damageReduction > 0) {
+                                    damage = Math.max(0, damage - gameState.player.damageReduction);
+                                    addLog(`格挡减少了${gameState.player.damageReduction}点伤害！`, 'system');
+                                }
+
+                                if (gameState.player.shield > 0) {
+                                    const shieldAbsorb = Math.min(damage, gameState.player.shield);
+                                    damage -= shieldAbsorb;
+                                    gameState.player.shield -= shieldAbsorb;
+                                    if (shieldAbsorb > 0) {
+                                        addLog(`护盾吸收了${shieldAbsorb}点伤害！`, 'system');
+                                    }
+                                }
+
+                                gameState.player.hp = Math.max(0, gameState.player.hp - damage);
+                                addLog(`敌方消耗1NP发动攻击，对你造成${damage}点伤害！`, 'enemy');
+                                if (damage > 0) showDamageNumber(damage, 'player');
+                            }
+                            break;
+
+                        case 'heavy':
+                            gameState.enemy.np = Math.max(0, gameState.enemy.np - 2);
+                            if (gameState.player.invincible) {
+                                addLog('敌方消耗2NP发动重击，但你处于无敌状态！', 'enemy');
+                                showDamageNumber(0, 'player');
+                            } else {
+                                let damage = Math.floor(Math.random() * (enemyConfig.bossHeavyMax - enemyConfig.bossHeavyMin + 1)) + enemyConfig.bossHeavyMin;
+
+                                // 闪避判定
+                                const dodgeRate = getEquippedStat('dodgeRate');
+                                if (dodgeRate > 0 && Math.random() < dodgeRate) {
+                                    addLog('⚡ 你闪避了敌人的重击！', 'system');
+                                    damage = 0;
+                                }
+
+                                if (gameState.player.damageReduction > 0) {
+                                    damage = Math.max(0, damage - gameState.player.damageReduction);
+                                    addLog(`格挡减少了${gameState.player.damageReduction}点伤害！`, 'system');
+                                }
+
+                                if (gameState.player.shield > 0) {
+                                    const shieldAbsorb = Math.min(damage, gameState.player.shield);
+                                    damage -= shieldAbsorb;
+                                    gameState.player.shield -= shieldAbsorb;
+                                    if (shieldAbsorb > 0) {
+                                        addLog(`护盾吸收了${shieldAbsorb}点伤害！`, 'system');
+                                    }
+                                }
+
+                                gameState.player.hp = Math.max(0, gameState.player.hp - damage);
+                                addLog(`敌方消耗2NP发动重击，对你造成${damage}点伤害！`, 'enemy');
+                                if (damage > 0) showDamageNumber(damage, 'player');
+                            }
+                            break;
+
+                        case 'heal':
+                            gameState.enemy.np = Math.max(0, gameState.enemy.np - 4);
+                            const heal = Math.floor(Math.random() * (enemyConfig.bossHealMax - enemyConfig.bossHealMin + 1)) + enemyConfig.bossHealMin;
+                            gameState.enemy.hp = Math.min(gameState.enemy.maxHp, gameState.enemy.hp + heal);
+                            addLog(`敌方消耗4NP回复了${heal}点HP！`, 'enemy');
+                            showHealNumber(heal, 'enemy');
+                            break;
+                    }
+                }
+                
+                document.getElementById('enemyAction').classList.remove('show');
+                
+                gameState.player.invincible = false;
+                document.getElementById('playerAvatar').classList.remove('invincible');
+                gameState.player.damageReduction = 0;
+                
+                updateUI();
+                
+                if (checkGameOver()) {
+                    gameState.isProcessing = false;
+                    return;
+                }
+                
+                if (checkBothNPZero()) {
+                    return;
+                }
+                
+                setTimeout(() => {
+                    if (gameState.player.np <= 0) {
+                        gameState.turn = 'player';
+                        gameState.isProcessing = false;
+                        updateTurnIndicator();
+                        updateUI();
+                        addLog('你的NP不足，跳过回合！', 'system');
+                        
+                        if (checkBothNPZero()) {
+                            return;
+                        }
+                        
+                        setTimeout(() => {
+                            gameState.turn = 'enemy';
+                            updateTurnIndicator();
+                            updateUI();
+                            enemyTurn();
+                        }, 1000);
+                    } else {
+                        gameState.turn = 'player';
+                        gameState.isProcessing = false;
+                        // NP回复装备效果
+                        const npRegen2 = getEquippedStat('npRegen');
+                        if (npRegen2 > 0) {
+                            gameState.player.np = Math.min(gameState.player.maxNp, gameState.player.np + npRegen2);
+                            addLog(`🧤 训练手套效果：回复${npRegen2}点NP`, 'system');
+                        }
+                        updateTurnIndicator();
+                        updateUI();
+                        addLog('你的回合', 'player');
+                    }
+                }, 500);
+            }, 1500);
+        }
+
+        // 检查双方NP是否都为0
+        function checkBothNPZero() {
+            if (gameState.player.np <= 0 && gameState.enemy.np <= 0) {
+                gameState.gameOver = true;
+                addLog('双方NP都已耗尽！', 'system');
+                
+                if (gameState.player.hp > gameState.enemy.hp) {
+                    addLog(`我方HP(${gameState.player.hp}) > 敌方HP(${gameState.enemy.hp})，你获胜了！`, 'system');
+                    showGameOver(true);
+                } else if (gameState.player.hp < gameState.enemy.hp) {
+                    addLog(`我方HP(${gameState.player.hp}) < 敌方HP(${gameState.enemy.hp})，你失败了...`, 'system');
+                    showGameOver(false);
+                } else {
+                    addLog(`双方HP相同(${gameState.player.hp})，平局！`, 'system');
+                    showGameOver(false);
+                }
+                return true;
+            }
+            return false;
+        }
+
+        function showDamageNumber(damage, target) {
+            const num = document.createElement('div');
+            num.className = 'damage-number';
+            num.textContent = damage > 0 ? '-' + damage : 'MISS';
+            
+            if (target === 'player') {
+                num.style.left = '150px';
+                num.style.top = '200px';
+            } else {
+                num.style.right = '150px';
+                num.style.top = '200px';
+                num.style.left = 'auto';
+            }
+            
+            document.body.appendChild(num);
+            setTimeout(() => num.remove(), 1000);
+        }
+
+        function showHealNumber(heal, target) {
+            const num = document.createElement('div');
+            num.className = 'heal-number';
+            num.textContent = '+' + heal;
+            
+            if (target === 'player') {
+                num.style.left = '150px';
+                num.style.top = '200px';
+            } else {
+                num.style.right = '150px';
+                num.style.top = '200px';
+                num.style.left = 'auto';
+            }
+            
+            document.body.appendChild(num);
+            setTimeout(() => num.remove(), 1000);
+        }
+
+        // ==================== 技能特效系统 ====================
+        function getEffectContainer() {
+            let container = document.getElementById('skillEffectContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'skillEffectContainer';
+                container.className = 'skill-effect-container';
+                document.body.appendChild(container);
+            }
+            return container;
+        }
+
+        function createEffectElement(className, x, y, duration = 1000) {
+            const container = getEffectContainer();
+            const el = document.createElement('div');
+            el.className = className;
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            container.appendChild(el);
+            setTimeout(() => {
+                if (el.parentNode) el.parentNode.removeChild(el);
+            }, duration);
+            return el;
+        }
+
+        function createParticles(x, y, count, color, spread = 100) {
+            const container = getEffectContainer();
+            for (let i = 0; i < count; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.style.left = x + 'px';
+                p.style.top = y + 'px';
+                p.style.width = (3 + Math.random() * 5) + 'px';
+                p.style.height = p.style.width;
+                p.style.background = color;
+                p.style.boxShadow = `0 0 ${4 + Math.random() * 8}px ${color}`;
+                const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
+                const dist = 30 + Math.random() * spread;
+                p.style.setProperty('--px', Math.cos(angle) * dist + 'px');
+                p.style.setProperty('--py', Math.sin(angle) * dist + 'px');
+                container.appendChild(p);
+                setTimeout(() => {
+                    if (p.parentNode) p.parentNode.removeChild(p);
+                }, 800);
+            }
+        }
+
+        function screenShake() {
+            document.body.classList.add('screen-shake');
+            setTimeout(() => document.body.classList.remove('screen-shake'), 300);
+        }
+
+        function hitFlash(target) {
+            const el = target === 'player' 
+                ? document.querySelector('.left-panel') 
+                : document.querySelector('.right-panel');
+            if (el) {
+                el.classList.add('hit-flash');
+                setTimeout(() => el.classList.remove('hit-flash'), 200);
+            }
+        }
+
+        // 玩家技能特效
+        function playPlayerSkillEffect(skillId) {
+            const playerX = window.innerWidth * 0.25;
+            const playerY = window.innerHeight * 0.4;
+            const enemyX = window.innerWidth * 0.75;
+            const enemyY = window.innerHeight * 0.4;
+
+            switch (skillId) {
+                case 'juejin': // 武士-决进：剑气斩击
+                    createEffectElement('effect-slash', playerX, playerY + 40, 600);
+                    setTimeout(() => {
+                        createParticles(enemyX, enemyY, 8, '#4a90d9', 80);
+                        hitFlash('enemy');
+                    }, 300);
+                    break;
+
+                case 'fireball': // 法师-火球术
+                    const fb = createEffectElement('effect-fireball', playerX + 50, playerY, 800);
+                    setTimeout(() => {
+                        createEffectElement('effect-explosion', enemyX - 75, enemyY - 75, 500);
+                        createParticles(enemyX, enemyY, 12, '#ff6b35', 100);
+                        hitFlash('enemy');
+                        screenShake();
+                    }, 600);
+                    break;
+
+                case 'elementalStorm': // 法师-元素风暴
+                    const storm = createEffectElement('effect-elemental-storm', enemyX - 150, enemyY - 150, 1000);
+                    for (let i = 0; i < 3; i++) {
+                        const ring = document.createElement('div');
+                        ring.className = 'storm-ring';
+                        storm.appendChild(ring);
+                    }
+                    for (let i = 0; i < 16; i++) {
+                        const p = document.createElement('div');
+                        p.className = 'storm-particle';
+                        p.style.left = '50%';
+                        p.style.top = '50%';
+                        const colors = ['#ff6b35', '#4ecdc4', '#a855f7'];
+                        p.style.background = colors[i % 3];
+                        p.style.boxShadow = `0 0 10px ${colors[i % 3]}`;
+                        const angle = (Math.PI * 2 * i) / 16;
+                        p.style.setProperty('--tx', Math.cos(angle) * 150 + 'px');
+                        p.style.setProperty('--ty', Math.sin(angle) * 150 + 'px');
+                        storm.appendChild(p);
+                    }
+                    setTimeout(() => {
+                        createParticles(enemyX, enemyY, 20, '#a855f7', 120);
+                        hitFlash('enemy');
+                        screenShake();
+                    }, 400);
+                    break;
+
+                case 'preciseShot': // 射手-精准射击
+                    createEffectElement('effect-arrow', playerX + 30, playerY + 20, 500);
+                    setTimeout(() => {
+                        createParticles(enemyX, enemyY, 6, '#16a34a', 60);
+                        hitFlash('enemy');
+                    }, 400);
+                    break;
+
+                case 'rapidFire': // 射手-连射
+                    for (let i = 0; i < 3; i++) {
+                        setTimeout(() => {
+                            createEffectElement('effect-multi-arrow', playerX + 30, playerY + 10 + i * 25, 400);
+                        }, i * 150);
+                    }
+                    setTimeout(() => {
+                        createParticles(enemyX, enemyY, 10, '#15803d', 80);
+                        hitFlash('enemy');
+                    }, 600);
+                    break;
+
+                case 'poisonArrow': // 射手-毒箭
+                    const pa = createEffectElement('effect-arrow', playerX + 30, playerY + 20, 500);
+                    pa.style.background = 'linear-gradient(90deg, transparent, #fff, #84cc16, transparent)';
+                    pa.style.boxShadow = '0 0 15px #84cc16';
+                    setTimeout(() => {
+                        createEffectElement('effect-poison', enemyX - 40, enemyY - 40, 1000);
+                        createParticles(enemyX, enemyY, 8, '#84cc16', 70);
+                        hitFlash('enemy');
+                    }, 400);
+                    break;
+
+                case 'shieldBash': // 盾卫-盾击
+                    createEffectElement('effect-shield-bash', playerX + 20, playerY - 10, 500);
+                    setTimeout(() => {
+                        createParticles(enemyX, enemyY, 6, '#64748b', 60);
+                        hitFlash('enemy');
+                        screenShake();
+                    }, 300);
+                    break;
+
+                case 'qianlong': // 武士-潜龙：无敌
+                    createEffectElement('effect-invincible', playerX - 90, playerY - 90, 800);
+                    createParticles(playerX, playerY, 10, '#c94c4c', 50);
+                    break;
+
+                case 'magicShield': // 法师-魔力盾
+                    createEffectElement('effect-shield', playerX - 80, playerY - 80, 600);
+                    createParticles(playerX, playerY, 8, '#4ecdc4', 40);
+                    break;
+
+                case 'block': // 盾卫-格挡
+                    createEffectElement('effect-block', playerX - 70, playerY - 70, 500);
+                    createParticles(playerX, playerY, 6, '#475569', 30);
+                    break;
+
+                case 'jiushi': // 武士-酒诗：治疗
+                    const heal = createEffectElement('effect-heal', playerX - 75, playerY - 75, 1000);
+                    for (let i = 0; i < 8; i++) {
+                        const p = document.createElement('div');
+                        p.className = 'heal-particle';
+                        p.style.left = (30 + Math.random() * 90) + 'px';
+                        p.style.top = (30 + Math.random() * 90) + 'px';
+                        heal.appendChild(p);
+                    }
+                    createParticles(playerX, playerY, 6, '#a855f7', 40);
+                    break;
+
+                case 'ironWall': // 盾卫-铁壁
+                    createEffectElement('effect-ironwall', playerX - 85, playerY - 85, 800);
+                    createParticles(playerX, playerY, 8, '#334155', 40);
+                    setTimeout(() => {
+                        createParticles(playerX, playerY, 6, '#a855f7', 30);
+                    }, 300);
+                    break;
+            }
+        }
+
+        // 敌方技能特效
+        function playEnemySkillEffect(action) {
+            const playerX = window.innerWidth * 0.25;
+            const playerY = window.innerHeight * 0.4;
+            const enemyX = window.innerWidth * 0.75;
+            const enemyY = window.innerHeight * 0.4;
+
+            switch (action) {
+                case 'attack': // 普通攻击
+                    createEffectElement('effect-enemy-attack', enemyX - 80, playerY - 40, 500);
+                    setTimeout(() => {
+                        createParticles(playerX, playerY, 6, '#ff4444', 60);
+                        hitFlash('player');
+                    }, 300);
+                    break;
+
+                case 'heavy': // 重击
+                    createEffectElement('effect-enemy-heavy', enemyX - 120, playerY - 60, 600);
+                    setTimeout(() => {
+                        createParticles(playerX, playerY, 12, '#ff0000', 100);
+                        hitFlash('player');
+                        screenShake();
+                    }, 350);
+                    break;
+
+                case 'heal': // 治疗
+                    createEffectElement('effect-enemy-heal', enemyX - 50, enemyY - 50, 800);
+                    createParticles(enemyX, enemyY, 6, '#ff6b6b', 40);
+                    break;
+            }
+        }
+
+        function addLog(message, type) {
+            const log = document.getElementById('battleLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = message;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function updateTurnIndicator() {
+            const indicator = document.getElementById('turnIndicator');
+            if (gameState.turn === 'player') {
+                indicator.textContent = '你的回合';
+                indicator.className = 'turn-indicator player-turn';
+            } else {
+                indicator.textContent = '敌方回合';
+                indicator.className = 'turn-indicator enemy-turn';
+            }
+        }
+
+        function updateUI() {
+            const playerHpPercent = (gameState.player.hp / gameState.player.maxHp) * 100;
+            document.getElementById('playerHpBar').style.width = playerHpPercent + '%';
+            document.getElementById('playerHpText').textContent = `${gameState.player.hp}/${gameState.player.maxHp} HP`;
+            document.getElementById('playerNpText').textContent = `NP: ${gameState.player.np}`;
+            
+            const enemyHpPercent = (gameState.enemy.hp / gameState.enemy.maxHp) * 100;
+            document.getElementById('enemyHpBar').style.width = enemyHpPercent + '%';
+            document.getElementById('enemyHpText').textContent = `${gameState.enemy.hp}/${gameState.enemy.maxHp} HP`;
+            document.getElementById('enemyNpText').textContent = `NP: ${gameState.enemy.np}`;
+            
+            const shieldIndicator = document.getElementById('shieldIndicator');
+            if (gameState.player.shield > 0) {
+                shieldIndicator.style.display = 'block';
+                shieldIndicator.textContent = `护盾: ${gameState.player.shield}`;
+            } else {
+                shieldIndicator.style.display = 'none';
+            }
+            
+            const defenseIndicator = document.getElementById('defenseIndicator');
+            if (gameState.player.damageReduction > 0) {
+                defenseIndicator.style.display = 'block';
+                defenseIndicator.textContent = `减伤: ${gameState.player.damageReduction}`;
+            } else {
+                defenseIndicator.style.display = 'none';
+            }
+            
+            const isPlayerTurn = gameState.turn === 'player' && !gameState.isProcessing && !gameState.gameOver;
+            
+            selectedClass.skills.forEach(skill => {
+                const btn = document.getElementById('btn' + skill.id.charAt(0).toUpperCase() + skill.id.slice(1));
+                if (btn) {
+                    let disabled = !isPlayerTurn || gameState.player.np < skill.npCost;
+                    if (skill.type === 'heal' && skill.heal) {
+                        disabled = disabled || gameState.player.hp >= gameState.player.maxHp;
+                    }
+                    btn.disabled = disabled;
+                }
+            });
+            
+            const giveupBtn = document.getElementById('btnGiveup');
+            if (giveupBtn) {
+                giveupBtn.disabled = !isPlayerTurn;
+            }
+        }
+
+        function checkGameOver() {
+            if (gameState.player.hp <= 0) {
+                // 检查凤凰之羽复活
+                const hasRevive = stageSystem.equippedItems.some(e => e.id === 'phoenix_feather');
+                if (hasRevive && !gameState.player.hasRevived) {
+                    gameState.player.hasRevived = true;
+                    const reviveHp = Math.floor(gameState.player.maxHp * 0.3);
+                    gameState.player.hp = reviveHp;
+                    addLog('🪶 凤凰之羽触发！你复活了！', 'system');
+                    updateUI();
+                    return false;
+                }
+                gameState.gameOver = true;
+                showGameOver(false);
+                return true;
+            }
+            if (gameState.enemy.hp <= 0) {
+                // 检查是否是Boss关（最后一关）
+                if (stageSystem.isBossStage) {
+                    gameState.gameOver = true;
+                    // 触发成就检查
+                    checkAndUnlockAchievements(true);
+                    showGameOver(true);
+                } else {
+                    // 非Boss关，进入下一关
+                    gameState.isProcessing = true;
+                    addLog('敌人被击败了！', 'system');
+                    setTimeout(() => {
+                        nextStage();
+                    }, 800);
+                }
+                return true;
+            }
+            return false;
+        }
+
+        function checkAndUnlockAchievements(victory) {
+            if (!victory || !currentUser) return;
+            
+            const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+            if (!users[currentUser]) return;
+            
+            const userAchievements = users[currentUser].achievements || { earned: [], progress: {}, newlyUnlocked: 0 };
+            let newlyUnlocked = [];
+            
+            // 首胜成就
+            if (!userAchievements.earned.includes('first_victory')) {
+                userAchievements.earned.push('first_victory');
+                newlyUnlocked.push('first_victory');
+            }
+            
+            // 难度成就
+            const diffAchievementMap = {
+                'easy': 'defeat_easy',
+                'normal': 'defeat_normal',
+                'hard': 'defeat_hard'
+            };
+            
+            const difficultyId = selectedDifficulty ? selectedDifficulty.id : null;
+            if (difficultyId && diffAchievementMap[difficultyId]) {
+                const achId = diffAchievementMap[difficultyId];
+                if (!userAchievements.earned.includes(achId)) {
+                    userAchievements.earned.push(achId);
+                    newlyUnlocked.push(achId);
+                }
+            }
+            
+            // 职业成就
+            const classAchievementMap = {
+                'samurai': 'master_samurai',
+                'mage': 'master_mage',
+                'archer': 'master_archer',
+                'guardian': 'master_guardian'
+            };
+            
+            const classId = selectedClass ? selectedClass.id : null;
+            if (classId && classAchievementMap[classId]) {
+                const achId = classAchievementMap[classId];
+                if (!userAchievements.earned.includes(achId)) {
+                    userAchievements.earned.push(achId);
+                    newlyUnlocked.push(achId);
+                }
+            }
+            
+            // 检查全能战士成就
+            const hasEasy = userAchievements.earned.includes('defeat_easy');
+            const hasNormal = userAchievements.earned.includes('defeat_normal');
+            const hasHard = userAchievements.earned.includes('defeat_hard');
+
+            if (hasEasy && hasNormal && hasHard && !userAchievements.earned.includes('all_difficulties')) {
+                userAchievements.earned.push('all_difficulties');
+                newlyUnlocked.push('all_difficulties');
+            }
+
+            // 检查完美胜利成就（满血）
+            if (gameState.player.hp >= gameState.player.maxHp && !userAchievements.earned.includes('perfect_victory')) {
+                userAchievements.earned.push('perfect_victory');
+                newlyUnlocked.push('perfect_victory');
+            }
+
+            // 保存当局获取的武器到图鉴
+            saveWeaponsToCollection();
+
+            // 发放货币奖励
+            giveBattleReward();
+
+            // 更新累计货币成就进度
+            updateCurrencyAchievements(users[currentUser]);
+
+            // 更新连胜成就
+            updateVictoryStreakAchievement(true, users[currentUser]);
+
+            if (newlyUnlocked.length > 0) {
+                userAchievements.newlyUnlocked = (userAchievements.newlyUnlocked || 0) + newlyUnlocked.length;
+                if (!userAchievements.unlockTimes) userAchievements.unlockTimes = {};
+                newlyUnlocked.forEach(id => {
+                    userAchievements.unlockTimes[id] = new Date().toISOString();
+                });
+
+                users[currentUser].achievements = userAchievements;
+                localStorage.setItem('vsFateUsers', JSON.stringify(users));
+
+                // 显示解锁提示
+                showAchievementUnlockNotice(newlyUnlocked);
+            }
+        }
+
+        // 更新货币类成就
+        function updateCurrencyAchievements(userData) {
+            if (!userData.achievements) userData.achievements = { earned: [], progress: {}, newlyUnlocked: 0 };
+            const earned = userData.achievements.earned;
+            const currency = userData.currency || { gold: 0, diamond: 0 };
+
+            // 金币成就
+            if (currency.gold >= 1000 && !earned.includes('rich_gold_1000')) {
+                earned.push('rich_gold_1000');
+            }
+            if (currency.gold >= 10000 && !earned.includes('rich_gold_10000')) {
+                earned.push('rich_gold_10000');
+            }
+
+            // 钻石成就
+            if (currency.diamond >= 100 && !earned.includes('diamond_collector_100')) {
+                earned.push('diamond_collector_100');
+            }
+            if (currency.diamond >= 500 && !earned.includes('diamond_collector_500')) {
+                earned.push('diamond_collector_500');
+            }
+        }
+
+        // 更新连胜成就
+        function updateVictoryStreakAchievement(victory, userData) {
+            if (!userData.achievements) userData.achievements = { earned: [], progress: {}, newlyUnlocked: 0 };
+            if (!userData.achievements.progress) userData.achievements.progress = {};
+
+            if (victory) {
+                userData.achievements.progress.victoryStreak = (userData.achievements.progress.victoryStreak || 0) + 1;
+                if (userData.achievements.progress.victoryStreak >= 3 && !userData.achievements.earned.includes('victory_streak_3')) {
+                    userData.achievements.earned.push('victory_streak_3');
+                }
+            } else {
+                userData.achievements.progress.victoryStreak = 0;
+            }
+        }
+
+        // 保存当局获取的武器到图鉴
+        function saveWeaponsToCollection() {
+            if (!currentUser) return;
+            
+            const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+            if (!users[currentUser]) return;
+            
+            if (!users[currentUser].weaponCollection) {
+                users[currentUser].weaponCollection = [];
+            }
+            
+            const collection = users[currentUser].weaponCollection;
+            let newWeapons = [];
+            
+            stageSystem.equippedItems.forEach(equip => {
+                if (!collection.includes(equip.id)) {
+                    collection.push(equip.id);
+                    newWeapons.push(equip);
+                }
+            });
+            
+            if (newWeapons.length > 0) {
+                localStorage.setItem('vsFateUsers', JSON.stringify(users));
+                addLog(`📖 新武器已收录到图鉴：${newWeapons.map(w => w.name).join('、')}`, 'system');
+            }
+        }
+
+        // 发放战斗奖励并显示结算界面
+        function giveBattleReward() {
+            if (!currentUser) return;
+            
+            const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+            if (!users[currentUser]) return;
+            
+            if (!users[currentUser].currency) {
+                users[currentUser].currency = { gold: 0, diamond: 0, chest: 0 };
+            }
+            
+            const currency = users[currentUser].currency;
+            const difficultyId = selectedDifficulty ? selectedDifficulty.id : 'normal';
+            
+            let goldReward = 0;
+            let chestChance = 0;
+            let gotChest = false;
+            
+            switch (difficultyId) {
+                case 'easy':
+                    goldReward = 100;
+                    chestChance = 0.10;
+                    break;
+                case 'normal':
+                    goldReward = 150;
+                    chestChance = 0.15;
+                    break;
+                case 'hard':
+                    goldReward = 200;
+                    chestChance = 0.20;
+                    break;
+            }
+            
+            currency.gold = (currency.gold || 0) + goldReward;
+            
+            // 宝箱判定 - 直接存入背包作为消耗品
+            if (Math.random() < chestChance) {
+                gotChest = true;
+                // 添加宝箱到背包
+                if (!users[currentUser].inventory) users[currentUser].inventory = [];
+                users[currentUser].inventory.push({
+                    id: 'chest_item',
+                    name: '神秘宝箱',
+                    icon: '📦',
+                    rarity: 'epic',
+                    color: '#a855f7',
+                    price: 0,
+                    priceType: 'gold',
+                    description: '开启可获得8-20钻石',
+                    effect: '开启获得随机钻石',
+                    stats: { chest: true },
+                    instanceId: Date.now() + Math.random().toString(36).substr(2, 9),
+                    equipped: false
+                });
+            }
+            
+            localStorage.setItem('vsFateUsers', JSON.stringify(users));
+            
+            // 显示结算界面
+            showRewardScreen(goldReward, gotChest);
+        }
+
+        // 显示战斗结算界面
+        function showRewardScreen(goldReward, gotChest) {
+            const overlay = document.getElementById('rewardOverlay');
+            const itemsContainer = document.getElementById('rewardItems');
+            
+            let html = `
+                <div class="reward-item">
+                    <span class="reward-item-icon">🪙</span>
+                    <div class="reward-item-info">
+                        <div class="reward-item-name">${goldReward} 金币</div>
+                        <div class="reward-item-desc">战斗胜利奖励</div>
+                    </div>
+                </div>
+            `;
+            
+            if (gotChest) {
+                html += `
+                    <div class="reward-item">
+                        <span class="reward-item-icon reward-chest-animation">📦</span>
+                        <div class="reward-item-info">
+                            <div class="reward-item-name">神秘宝箱</div>
+                            <div class="reward-item-desc">已存入背包，可在背包中开启</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            itemsContainer.innerHTML = html;
+            overlay.classList.add('show');
+        }
+
+        // 关闭结算界面并显示游戏结束界面
+        function closeRewardAndShowGameOver() {
+            document.getElementById('rewardOverlay').classList.remove('show');
+            // 显示原游戏结束界面
+            const modal = document.getElementById('gameOverModal');
+            const content = document.getElementById('modalContent');
+            const title = document.getElementById('modalTitle');
+            title.textContent = '胜利!';
+            title.className = 'modal-title victory';
+            content.className = 'modal-content victory';
+            modal.classList.add('show');
+        }
+
+        function showAchievementUnlockNotice(achievementIds) {
+            const achievementNames = {
+                'first_victory': { name: '首胜', icon: '🎯' },
+                'defeat_easy': { name: '初出茅庐', icon: '🥉' },
+                'defeat_normal': { name: '勇者之路', icon: '🥈' },
+                'defeat_hard': { name: '传奇征服者', icon: '🥇' },
+                'all_difficulties': { name: '全能战士', icon: '👑' },
+                'master_samurai': { name: '剑圣', icon: '⚔️' },
+                'master_mage': { name: '大魔导师', icon: '🔮' },
+                'master_archer': { name: '神射手', icon: '🏹' },
+                'master_guardian': { name: '不朽盾墙', icon: '🛡️' }
+            };
+            
+            achievementIds.forEach((id, index) => {
+                setTimeout(() => {
+                    const ach = achievementNames[id];
+                    if (ach) {
+                        const notice = document.createElement('div');
+                        notice.style.cssText = `
+                            position: fixed;
+                            top: ${20 + index * 100}px;
+                            left: 50%;
+                            transform: translateX(-50%) scale(0);
+                            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                            border: 2px solid #ffd700;
+                            border-radius: 15px;
+                            padding: 20px 40px;
+                            text-align: center;
+                            z-index: 2000;
+                            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+                            animation: unlockNoticePop 0.5s ease forwards, unlockNoticeFade 0.5s ease 2.5s forwards;
+                            pointer-events: none;
+                        `;
+                        notice.innerHTML = `
+                            <div style="font-size: 40px; margin-bottom: 10px;">${ach.icon}</div>
+                            <div style="color: #ffd700; font-size: 18px; font-weight: bold; margin-bottom: 5px;">🏆 成就解锁！</div>
+                            <div style="color: #fff; font-size: 16px; font-weight: bold;">${ach.name}</div>
+                        `;
+                        document.body.appendChild(notice);
+                        
+                        setTimeout(() => {
+                            if (notice.parentNode) notice.parentNode.removeChild(notice);
+                        }, 3000);
+                    }
+                }, index * 500);
+            });
+            
+            // 添加CSS动画
+            if (!document.getElementById('achievementAnimStyle')) {
+                const style = document.createElement('style');
+                style.id = 'achievementAnimStyle';
+                style.textContent = `
+                    @keyframes unlockNoticePop {
+                        0% { transform: translateX(-50%) scale(0); opacity: 0; }
+                        50% { transform: translateX(-50%) scale(1.1); opacity: 1; }
+                        100% { transform: translateX(-50%) scale(1); opacity: 1; }
+                    }
+                    @keyframes unlockNoticeFade {
+                        0% { transform: translateX(-50%) scale(1); opacity: 1; }
+                        100% { transform: translateX(-50%) scale(0.8); opacity: 0; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+
+        function showGameOver(victory) {
+            const modal = document.getElementById('gameOverModal');
+            const content = document.getElementById('modalContent');
+            const title = document.getElementById('modalTitle');
+            
+            if (victory) {
+                title.textContent = '胜利!';
+                title.className = 'modal-title victory';
+                content.className = 'modal-content victory';
+            } else {
+                title.textContent = '失败...';
+                title.className = 'modal-title defeat';
+                content.className = 'modal-content defeat';
+            }
+            
+            modal.classList.add('show');
+        }
+
+        function saveGame() {
+            const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+            if (currentUser && users[currentUser]) {
+                users[currentUser].gameData = {
+                    playerHp: gameState.player.hp,
+                    playerNp: gameState.player.np,
+                    selectedClass: selectedClass.id,
+                    selectedDifficulty: selectedDifficulty.id,
+                    timestamp: new Date().toISOString()
+                };
+                localStorage.setItem('vsFateUsers', JSON.stringify(users));
+            }
+            
+            const indicator = document.getElementById('saveIndicator');
+            indicator.classList.add('show');
+            setTimeout(() => indicator.classList.remove('show'), 2000);
+        }
+
+        function restartGame() {
+            // 重置游戏状态
+            gameState = {
+                player: {
+                    hp: selectedClass.hp,
+                    maxHp: selectedClass.maxHp,
+                    np: selectedClass.np,
+                    maxNp: selectedClass.maxNp,
+                    invincible: false,
+                    shield: 0,
+                    damageReduction: 0,
+                    hasRevived: false
+                },
+                enemy: {
+                    hp: 0,
+                    maxHp: 0,
+                    np: 0,
+                    maxNp: 0,
+                    poison: 0
+                },
+                turn: 'player',
+                gameOver: false,
+                isProcessing: false
+            };
+
+            // 重置关卡系统
+            stageSystem.equippedItems = [];
+            stageSystem.currentStage = 0;
+
+            document.getElementById('gameOverModal').classList.remove('show');
+            document.getElementById('battleLog').innerHTML = '';
+            document.getElementById('playerAvatar').classList.remove('invincible');
+            document.getElementById('equippedItems').innerHTML = '';
+
+            // 重新初始化关卡
+            initStageSystem();
+            loadCurrentStage();
+
+            const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+            if (currentUser && users[currentUser]) {
+                users[currentUser].gameData = {
+                    playerHp: selectedClass.hp,
+                    playerNp: selectedClass.np,
+                    selectedClass: selectedClass.id,
+                    selectedDifficulty: selectedDifficulty.id
+                };
+                localStorage.setItem('vsFateUsers', JSON.stringify(users));
+            }
+
+            updateUI();
+            addLog('战斗重新开始！', 'system');
+            addLog(`难度：${selectedDifficulty.name}，共 ${stageSystem.totalStages} 关`, 'system');
+            addLog('你的回合', 'player');
+        }
+
+        function loadGame() {
+            const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+            if (currentUser && users[currentUser] && users[currentUser].gameData) {
+                try {
+                    const saved = users[currentUser].gameData;
+                    const savedClass = CLASSES[saved.selectedClass || selectedClass.id];
+                    const savedDifficulty = DIFFICULTIES[saved.selectedDifficulty || selectedDifficulty.id];
+                    
+                    selectedClass = savedClass;
+                    selectedDifficulty = savedDifficulty;
+                    document.getElementById('playerAvatarIcon').textContent = selectedClass.icon;
+                    
+                    gameState.player.hp = saved.playerHp || selectedClass.hp;
+                    gameState.player.np = saved.playerNp || selectedClass.np;
+                    gameState.player.maxHp = selectedClass.maxHp;
+                    gameState.player.maxNp = selectedClass.maxNp;
+                    gameState.player.invincible = false;
+                    gameState.player.shield = 0;
+                    gameState.player.damageReduction = 0;
+                    gameState.enemy.hp = selectedDifficulty.bossHp;
+                    gameState.enemy.maxHp = selectedDifficulty.bossMaxHp;
+                    gameState.enemy.np = selectedDifficulty.bossNp;
+                    gameState.enemy.maxNp = selectedDifficulty.bossMaxNp;
+                    gameState.enemy.poison = 0;
+                    gameState.turn = 'player';
+                    gameState.gameOver = false;
+                    gameState.isProcessing = false;
+                    
+                    renderSkillButtons();
+                    document.getElementById('gameOverModal').classList.remove('show');
+                    document.getElementById('battleLog').innerHTML = '';
+                    document.getElementById('playerAvatar').classList.remove('invincible');
+                    
+                    updateUI();
+                    addLog('读取存档成功！', 'system');
+                    addLog('你的回合', 'player');
+                } catch (e) {
+                    console.error('读取存档失败:', e);
+                    restartGame();
+                }
+            } else {
+                restartGame();
+            }
+        }
+
+        function backToMainMenu() {
+            window.location.href = 'login.html#mainmenu';
+        }
+
+        function adjustColor(color, amount) {
+            const num = parseInt(color.replace('#', ''), 16);
+            const r = Math.max(0, Math.min(255, (num >> 16) + amount));
+            const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00ff) + amount));
+            const b = Math.max(0, Math.min(255, (num & 0x0000ff) + amount));
+            return `#${(0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1)}`;
+        }
+
+        // 页面加载完成后初始化游戏
+        window.onload = initGame;
+    </script>
+</body>
+</html>

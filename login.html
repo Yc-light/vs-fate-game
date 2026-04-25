@@ -1,0 +1,3781 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VS FATE - 登录</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+      overflow: hidden;
+      background: #000;
+    }
+
+    .cover-container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cover-background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url('封面.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      z-index: 1;
+    }
+
+    .button-container {
+      position: absolute;
+      bottom: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 80px;
+      z-index: 100;
+    }
+
+    .game-btn {
+      padding: 15px 40px;
+      font-size: 24px;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+      min-width: 140px;
+    }
+
+    .game-btn:hover {
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .game-btn:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    .btn-login {
+      background: linear-gradient(135deg, #f5f5f5 0%, #d4d4d4 100%);
+      color: #333;
+      border: 3px solid #b8860b;
+    }
+
+    .btn-login:hover {
+      background: linear-gradient(135deg, #ffffff 0%, #e8e8e8 100%);
+    }
+
+    .btn-start {
+      background: linear-gradient(135deg, #d4a84b 0%, #b8860b 100%);
+      color: #fff;
+      border: 3px solid #ffd700;
+      font-size: 28px;
+      padding: 18px 50px;
+    }
+
+    .btn-start:hover {
+      background: linear-gradient(135deg, #e0b85c 0%, #c9971c 100%);
+    }
+
+    .btn-exit {
+      background: linear-gradient(135deg, #f5f5f5 0%, #d4d4d4 100%);
+      color: #333;
+      border: 3px solid #b8860b;
+    }
+
+    .btn-exit:hover {
+      background: linear-gradient(135deg, #ff6b6b 0%, #c94c4c 100%);
+      color: #fff;
+    }
+
+    .btn-achievement {
+      background: linear-gradient(135deg, #ffd700 0%, #b8860b 100%);
+      color: #fff;
+      border: 3px solid #ffd700;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-achievement::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(
+        45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.3) 50%,
+        transparent 70%
+      );
+      animation: achievementShine 3s ease-in-out infinite;
+    }
+
+    @keyframes achievementShine {
+      0% { transform: translateX(-100%) rotate(45deg); }
+      100% { transform: translateX(100%) rotate(45deg); }
+    }
+
+    .btn-achievement:hover {
+      background: linear-gradient(135deg, #ffe44d 0%, #d4a84b 100%);
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+    }
+
+    .btn-encyclopedia {
+      background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+      color: #fff;
+      border: 3px solid #8b5cf6;
+    }
+
+    .btn-encyclopedia:hover {
+      background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+      box-shadow: 0 0 30px rgba(139, 92, 246, 0.6);
+    }
+
+    .achievement-badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #ef4444;
+      color: #fff;
+      font-size: 12px;
+      font-weight: bold;
+      padding: 2px 8px;
+      border-radius: 10px;
+      border: 2px solid #fff;
+      z-index: 10;
+      animation: badgePulse 2s ease-in-out infinite;
+    }
+
+    @keyframes badgePulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .login-modal {
+      background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+      padding: 40px 50px;
+      border-radius: 20px;
+      border: 3px solid #b8860b;
+      box-shadow: 0 0 50px rgba(184,134,11,0.5);
+      width: 400px;
+      animation: modalPop 0.3s ease;
+    }
+
+    @keyframes modalPop {
+      0% { transform: scale(0.8); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-title {
+      color: #d4a84b;
+      font-size: 32px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 30px;
+      text-shadow: 0 0 20px rgba(212,168,75,0.5);
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    .input-group label {
+      display: block;
+      color: #ccc;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 12px 15px;
+      font-size: 16px;
+      border: 2px solid #555;
+      border-radius: 8px;
+      background: rgba(0,0,0,0.5);
+      color: #fff;
+      transition: all 0.3s ease;
+    }
+
+    .input-group input:focus {
+      outline: none;
+      border-color: #d4a84b;
+      box-shadow: 0 0 10px rgba(212,168,75,0.3);
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 15px;
+      margin-top: 30px;
+    }
+
+    .modal-btn {
+      flex: 1;
+      padding: 12px 20px;
+      font-size: 18px;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-confirm {
+      background: linear-gradient(135deg, #d4a84b 0%, #b8860b 100%);
+      color: #fff;
+    }
+
+    .btn-confirm:hover {
+      background: linear-gradient(135deg, #e0b85c 0%, #c9971c 100%);
+    }
+
+    .btn-cancel {
+      background: linear-gradient(135deg, #666 0%, #444 100%);
+      color: #fff;
+    }
+
+    .btn-cancel:hover {
+      background: linear-gradient(135deg, #777 0%, #555 100%);
+    }
+
+    .btn-switch {
+      background: transparent;
+      color: #d4a84b;
+      border: 2px solid #d4a84b;
+    }
+
+    .btn-switch:hover {
+      background: rgba(212,168,75,0.1);
+    }
+
+    .error-message {
+      color: #ff6b6b;
+      font-size: 14px;
+      margin-top: 10px;
+      text-align: center;
+      min-height: 20px;
+    }
+
+    .success-message {
+      color: #4ade80;
+      font-size: 14px;
+      margin-top: 10px;
+      text-align: center;
+      min-height: 20px;
+    }
+
+    .tip-message {
+      position: absolute;
+      bottom: 25%;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.9);
+      font-size: 18px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+      z-index: 100;
+      text-align: center;
+    }
+
+    /* 职业选择页面样式 */
+    .class-select-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      z-index: 2;
+    }
+
+    .class-select-bg::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(107, 92, 231, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(201, 76, 76, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(34, 197, 94, 0.1) 0%, transparent 50%);
+    }
+
+    .class-select-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 40px;
+      max-width: 1400px;
+      width: 100%;
+    }
+
+    .class-select-title {
+      font-size: 48px;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+      margin-bottom: 10px;
+      letter-spacing: 5px;
+    }
+
+    .class-select-subtitle {
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 50px;
+    }
+
+    .class-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+
+    .class-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 30px 20px;
+      cursor: pointer;
+      transition: all 0.4s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .class-card:hover {
+      transform: translateY(-10px);
+      border-color: var(--class-color, #b8860b);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 30px rgba(0, 0, 0, 0.2);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .class-icon {
+      font-size: 60px;
+      margin-bottom: 10px;
+      filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+    }
+
+    .class-name {
+      font-size: 28px;
+      font-weight: bold;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+
+    .class-description {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 15px;
+    }
+
+    .class-stats {
+      display: flex;
+      gap: 30px;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .stat-value.hp {
+      color: #ff6b6b;
+    }
+
+    .stat-value.np {
+      color: #4a90d9;
+    }
+
+    .skill-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+
+    .skill-tag {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    }
+
+    /* 难度选择页面样式 */
+    .difficulty-select-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      z-index: 2;
+    }
+
+    .difficulty-select-bg::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(34, 197, 94, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(234, 179, 8, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(239, 68, 68, 0.1) 0%, transparent 50%);
+    }
+
+    .difficulty-select-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 40px;
+      max-width: 1200px;
+      width: 100%;
+    }
+
+    .difficulty-select-title {
+      font-size: 48px;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+      margin-bottom: 10px;
+      letter-spacing: 5px;
+    }
+
+    .difficulty-select-subtitle {
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 50px;
+    }
+
+    .difficulty-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+
+    .difficulty-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 30px 25px;
+      cursor: pointer;
+      transition: all 0.4s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .difficulty-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .difficulty-card.easy::before {
+      background: linear-gradient(90deg, #22c55e, #4ade80);
+    }
+
+    .difficulty-card.normal::before {
+      background: linear-gradient(90deg, #eab308, #facc15);
+    }
+
+    .difficulty-card.hard::before {
+      background: linear-gradient(90deg, #ef4444, #f87171);
+    }
+
+    .difficulty-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .difficulty-card:hover::before {
+      opacity: 1;
+    }
+
+    .difficulty-card.easy:hover {
+      border-color: #22c55e;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 30px rgba(34, 197, 94, 0.2);
+    }
+
+    .difficulty-card.normal:hover {
+      border-color: #eab308;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 30px rgba(234, 179, 8, 0.2);
+    }
+
+    .difficulty-card.hard:hover {
+      border-color: #ef4444;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 30px rgba(239, 68, 68, 0.2);
+    }
+
+    .difficulty-icon {
+      font-size: 60px;
+      margin-bottom: 10px;
+      filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+    }
+
+    .difficulty-name {
+      font-size: 28px;
+      font-weight: bold;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+
+    .difficulty-card.easy .difficulty-name {
+      color: #4ade80;
+    }
+
+    .difficulty-card.normal .difficulty-name {
+      color: #facc15;
+    }
+
+    .difficulty-card.hard .difficulty-name {
+      color: #f87171;
+    }
+
+    .difficulty-description {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 15px;
+    }
+
+    .difficulty-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+      margin: 15px 0;
+      padding: 15px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+    }
+
+    .difficulty-stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+    }
+
+    .difficulty-stat .stat-label {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .difficulty-stat .stat-value {
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .difficulty-features {
+      width: 100%;
+      text-align: left;
+    }
+
+    .difficulty-features h3 {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 10px;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .difficulty-features ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .difficulty-features li {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.8);
+      padding: 5px 0;
+      padding-left: 20px;
+      position: relative;
+    }
+
+    .difficulty-features li::before {
+      content: '▸';
+      position: absolute;
+      left: 0;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .difficulty-card.easy .difficulty-features li::before {
+      color: #4ade80;
+    }
+
+    .difficulty-card.normal .difficulty-features li::before {
+      color: #facc15;
+    }
+
+    .difficulty-card.hard .difficulty-features li::before {
+      color: #f87171;
+    }
+
+    .select-difficulty-btn {
+      margin-top: 20px;
+      padding: 12px 30px;
+      font-size: 16px;
+      font-weight: bold;
+      border: 2px solid;
+      border-radius: 25px;
+      background: transparent;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .difficulty-card.easy .select-difficulty-btn {
+      border-color: #22c55e;
+    }
+
+    .difficulty-card.easy .select-difficulty-btn:hover {
+      background: #22c55e;
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+    }
+
+    .difficulty-card.normal .select-difficulty-btn {
+      border-color: #eab308;
+    }
+
+    .difficulty-card.normal .select-difficulty-btn:hover {
+      background: #eab308;
+      box-shadow: 0 0 20px rgba(234, 179, 8, 0.5);
+    }
+
+    .difficulty-card.hard .select-difficulty-btn {
+      border-color: #ef4444;
+    }
+
+    .difficulty-card.hard .select-difficulty-btn:hover {
+      background: #ef4444;
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+    }
+
+    /* 成就系统弹窗样式 */
+    .achievement-modal {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      padding: 0;
+      border-radius: 20px;
+      border: 3px solid #b8860b;
+      box-shadow: 0 0 50px rgba(184,134,11,0.5);
+      width: 900px;
+      max-width: 95vw;
+      max-height: 90vh;
+      animation: modalPop 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .achievement-header {
+      background: linear-gradient(135deg, #2a2a3e 0%, #1a1a2e 100%);
+      padding: 25px 30px;
+      border-bottom: 2px solid #b8860b;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .achievement-header-title {
+      color: #d4a84b;
+      font-size: 28px;
+      font-weight: bold;
+      text-shadow: 0 0 20px rgba(212,168,75,0.5);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .achievement-header-title .trophy-icon {
+      font-size: 36px;
+    }
+
+    .achievement-stats {
+      display: flex;
+      gap: 20px;
+      color: #ccc;
+      font-size: 14px;
+    }
+
+    .achievement-stats span {
+      color: #d4a84b;
+      font-weight: bold;
+    }
+
+    .achievement-close-btn {
+      background: none;
+      border: none;
+      color: #999;
+      font-size: 28px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+
+    .achievement-close-btn:hover {
+      color: #fff;
+      background: rgba(255,255,255,0.1);
+    }
+
+    .achievement-content {
+      padding: 30px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .achievement-category {
+      margin-bottom: 30px;
+    }
+
+    .achievement-category-title {
+      color: #fff;
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .achievement-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .achievement-item {
+      background: rgba(255,255,255,0.05);
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 15px;
+      padding: 20px;
+      text-align: center;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .achievement-item:hover {
+      transform: translateY(-5px);
+      border-color: rgba(212,168,75,0.5);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .achievement-item.earned {
+      border-color: #d4a84b;
+      background: linear-gradient(135deg, rgba(212,168,75,0.1) 0%, rgba(184,134,11,0.05) 100%);
+    }
+
+    .achievement-item.earned::after {
+      content: '✓';
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #22c55e;
+      color: #fff;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .achievement-item.not-earned {
+      opacity: 0.6;
+    }
+
+    .achievement-item.not-earned .achievement-icon {
+      filter: grayscale(100%);
+    }
+
+    .achievement-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+      display: block;
+      filter: drop-shadow(0 0 10px rgba(255,255,255,0.3));
+    }
+
+    .achievement-icon.tier-1 {
+      filter: drop-shadow(0 0 15px rgba(34, 197, 94, 0.6));
+    }
+
+    .achievement-icon.tier-2 {
+      filter: drop-shadow(0 0 15px rgba(234, 179, 8, 0.6));
+    }
+
+    .achievement-icon.tier-3 {
+      filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.8));
+      animation: legendaryGlow 2s ease-in-out infinite;
+    }
+
+    @keyframes legendaryGlow {
+      0%, 100% { filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.8)); }
+      50% { filter: drop-shadow(0 0 30px rgba(239, 68, 68, 1)); }
+    }
+
+    .achievement-name {
+      color: #fff;
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .achievement-description {
+      color: rgba(255,255,255,0.6);
+      font-size: 13px;
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+
+    .achievement-condition {
+      color: #d4a84b;
+      font-size: 12px;
+      font-weight: bold;
+      padding: 5px 10px;
+      background: rgba(212,168,75,0.1);
+      border-radius: 10px;
+      display: inline-block;
+    }
+
+    .achievement-progress {
+      margin-top: 10px;
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .achievement-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #d4a84b, #ffd700);
+      border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+
+    .achievement-progress-text {
+      color: rgba(255,255,255,0.5);
+      font-size: 11px;
+      margin-top: 5px;
+    }
+
+    .achievement-unlock-animation {
+      position: fixed;
+      top: 20%;
+      left: 50%;
+      transform: translateX(-50%) scale(0);
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      border: 3px solid #ffd700;
+      border-radius: 20px;
+      padding: 30px 50px;
+      text-align: center;
+      z-index: 2000;
+      box-shadow: 0 0 50px rgba(255, 215, 0, 0.5);
+      animation: unlockPop 0.5s ease forwards, unlockFade 0.5s ease 3s forwards;
+      pointer-events: none;
+    }
+
+    @keyframes unlockPop {
+      0% { transform: translateX(-50%) scale(0); opacity: 0; }
+      50% { transform: translateX(-50%) scale(1.1); opacity: 1; }
+      100% { transform: translateX(-50%) scale(1); opacity: 1; }
+    }
+
+    @keyframes unlockFade {
+      0% { transform: translateX(-50%) scale(1); opacity: 1; }
+      100% { transform: translateX(-50%) scale(0.8); opacity: 0; }
+    }
+
+    .unlock-icon {
+      font-size: 60px;
+      margin-bottom: 15px;
+      display: block;
+    }
+
+    .unlock-title {
+      color: #ffd700;
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .unlock-name {
+      color: #fff;
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .unlock-description {
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+    }
+
+    /* 武器图鉴样式 */
+    .weapon-encyclopedia-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .weapon-encyclopedia-overlay.show {
+      display: flex;
+    }
+
+    .weapon-encyclopedia-modal {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      border: 3px solid #b8860b;
+      border-radius: 20px;
+      padding: 0;
+      max-width: 1000px;
+      width: 90%;
+      max-height: 85vh;
+      overflow: hidden;
+      animation: modalPop 0.4s ease;
+      box-shadow: 0 0 50px rgba(184,134,11,0.4);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .weapon-encyclopedia-header {
+      background: linear-gradient(135deg, #2a2a3e 0%, #1a1a2e 100%);
+      padding: 25px 30px;
+      border-bottom: 2px solid #b8860b;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .weapon-encyclopedia-title {
+      color: #d4a84b;
+      font-size: 28px;
+      font-weight: bold;
+      text-shadow: 0 0 20px rgba(212,168,75,0.5);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .weapon-encyclopedia-stats {
+      color: #ccc;
+      font-size: 14px;
+    }
+
+    .weapon-encyclopedia-stats span {
+      color: #d4a84b;
+      font-weight: bold;
+    }
+
+    .weapon-encyclopedia-content {
+      padding: 30px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .weapon-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 20px;
+    }
+
+    .weapon-card {
+      background: rgba(255,255,255,0.05);
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 15px;
+      padding: 20px 15px;
+      text-align: center;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .weapon-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(255,255,255,0.3);
+    }
+
+    /* 已获取的武器发光效果 */
+    .weapon-card.obtained {
+      border-color: #d4a84b;
+      background: linear-gradient(135deg, rgba(212,168,75,0.15) 0%, rgba(184,134,11,0.05) 100%);
+      animation: weaponGlow 2s ease-in-out infinite;
+    }
+
+    @keyframes weaponGlow {
+      0%, 100% {
+        box-shadow: 0 0 10px rgba(212,168,75,0.3), 0 0 20px rgba(212,168,75,0.1);
+        border-color: #d4a84b;
+      }
+      50% {
+        box-shadow: 0 0 20px rgba(212,168,75,0.6), 0 0 40px rgba(212,168,75,0.2);
+        border-color: #ffd700;
+      }
+    }
+
+    .weapon-card.not-obtained {
+      opacity: 0.5;
+    }
+
+    .weapon-card.not-obtained .weapon-icon {
+      filter: grayscale(100%);
+    }
+
+    .weapon-icon {
+      font-size: 40px;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .weapon-card.obtained .weapon-icon {
+      filter: drop-shadow(0 0 8px rgba(255,215,0,0.6));
+    }
+
+    .weapon-name {
+      color: #fff;
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .weapon-rarity {
+      font-size: 11px;
+      font-weight: bold;
+      padding: 2px 8px;
+      border-radius: 8px;
+      display: inline-block;
+      margin-bottom: 5px;
+    }
+
+    .weapon-effect-text {
+      color: rgba(255,255,255,0.6);
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .weapon-obtained-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: #22c55e;
+      color: #fff;
+      font-size: 10px;
+      font-weight: bold;
+      padding: 2px 6px;
+      border-radius: 6px;
+      border: 1px solid #fff;
+    }
+
+    .weapon-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      justify-content: center;
+    }
+
+    .weapon-tab {
+      padding: 8px 20px;
+      border-radius: 20px;
+      border: 2px solid rgba(255,255,255,0.2);
+      background: transparent;
+      color: #ccc;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .weapon-tab:hover {
+      border-color: #d4a84b;
+      color: #d4a84b;
+    }
+
+    .weapon-tab.active {
+      background: linear-gradient(135deg, #d4a84b 0%, #b8860b 100%);
+      border-color: #d4a84b;
+      color: #fff;
+    }
+
+    /* 主菜单样式 */
+    .main-menu-container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+    }
+
+    .main-menu-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('背景2.jpg') center/cover no-repeat;
+      animation: bgPulse 8s ease-in-out infinite;
+    }
+
+    @keyframes bgPulse {
+      0%, 100% { opacity: 0.85; }
+      50% { opacity: 1; }
+    }
+
+    .main-menu-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      width: 100%;
+      max-width: 800px;
+      padding: 40px;
+    }
+
+    .main-menu-title {
+      font-size: 56px;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 30px rgba(255,255,255,0.5), 0 0 60px rgba(120,119,198,0.5);
+      margin-bottom: 10px;
+      letter-spacing: 8px;
+    }
+
+    .main-menu-subtitle {
+      font-size: 18px;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 60px;
+      letter-spacing: 4px;
+    }
+
+    .main-menu-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+
+    .main-menu-item {
+      background: rgba(255,255,255,0.05);
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 40px 30px;
+      cursor: pointer;
+      transition: all 0.4s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .main-menu-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, var(--menu-color, #4a90d9) 0%, transparent 100%);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .main-menu-item:hover::before {
+      opacity: 0.15;
+    }
+
+    .main-menu-item:hover {
+      transform: translateY(-10px) scale(1.02);
+      border-color: var(--menu-color, #4a90d9);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 30px var(--menu-glow, rgba(74,144,217,0.3));
+    }
+
+    .main-menu-item-icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+      display: block;
+      position: relative;
+      z-index: 2;
+      transition: all 0.3s ease;
+    }
+
+    /* 悬停时图标动画效果 */
+    .main-menu-item:hover .main-menu-item-icon {
+      animation: iconBounce 0.6s ease infinite;
+      transform: scale(1.2);
+      filter: drop-shadow(0 0 10px var(--menu-color, #fff));
+    }
+
+    @keyframes iconBounce {
+      0%, 100% { transform: scale(1.2) translateY(0); }
+      50% { transform: scale(1.2) translateY(-8px); }
+    }
+
+    .main-menu-item-name {
+      font-size: 24px;
+      font-weight: bold;
+      color: #fff;
+      margin-bottom: 8px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .main-menu-item-desc {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      position: relative;
+      z-index: 2;
+    }
+
+    .main-menu-back {
+      padding: 12px 40px;
+      font-size: 16px;
+      border: 2px solid rgba(255,255,255,0.2);
+      background: transparent;
+      color: rgba(255,255,255,0.6);
+      border-radius: 30px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 2;
+    }
+
+    .main-menu-back:hover {
+      border-color: #fff;
+      color: #fff;
+      background: rgba(255,255,255,0.1);
+    }
+
+    /* 货币显示栏 */
+    .currency-bar {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      display: flex;
+      gap: 20px;
+      z-index: 100;
+    }
+
+    .currency-item {
+      background: rgba(0,0,0,0.6);
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 25px;
+      padding: 8px 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #fff;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .currency-icon {
+      font-size: 20px;
+    }
+
+    .currency-gold { border-color: #f59e0b; color: #fbbf24; }
+    .currency-diamond { border-color: #3b82f6; color: #60a5fa; }
+    .currency-chest { border-color: #a855f7; color: #c084fc; }
+
+    /* 商店样式 */
+    .shop-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .shop-overlay.show { display: flex; }
+
+    .shop-modal {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      border: 3px solid #b8860b;
+      border-radius: 20px;
+      padding: 0;
+      max-width: 900px;
+      width: 90%;
+      max-height: 85vh;
+      overflow: hidden;
+      animation: modalPop 0.4s ease;
+      box-shadow: 0 0 50px rgba(184,134,11,0.4);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .shop-header {
+      background: linear-gradient(135deg, #2a2a3e 0%, #1a1a2e 100%);
+      padding: 25px 30px;
+      border-bottom: 2px solid #b8860b;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .shop-title {
+      color: #d4a84b;
+      font-size: 28px;
+      font-weight: bold;
+      text-shadow: 0 0 20px rgba(212,168,75,0.5);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .shop-close-btn {
+      background: none;
+      border: none;
+      color: #999;
+      font-size: 28px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+
+    .shop-close-btn:hover {
+      color: #fff;
+      background: rgba(255,255,255,0.1);
+    }
+
+    .shop-content {
+      padding: 30px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .shop-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    .shop-item {
+      background: rgba(255,255,255,0.05);
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 15px;
+      padding: 20px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .shop-item:hover {
+      transform: translateY(-5px);
+      border-color: var(--shop-color, #b8860b);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .shop-item-icon {
+      font-size: 40px;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .shop-item-name {
+      color: #fff;
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .shop-item-effect {
+      color: rgba(255,255,255,0.6);
+      font-size: 13px;
+      line-height: 1.5;
+      margin-bottom: 10px;
+    }
+
+    .shop-item-price {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      color: #fbbf24;
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .shop-buy-btn {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #d4a84b 0%, #b8860b 100%);
+      color: #fff;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .shop-buy-btn:hover {
+      transform: scale(1.02);
+      box-shadow: 0 0 15px rgba(212,168,75,0.5);
+    }
+
+    .shop-buy-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* 背包样式 */
+    .inventory-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .inventory-overlay.show { display: flex; }
+
+    .inventory-modal {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      border: 3px solid #b8860b;
+      border-radius: 20px;
+      padding: 0;
+      max-width: 800px;
+      width: 90%;
+      max-height: 85vh;
+      overflow: hidden;
+      animation: modalPop 0.4s ease;
+      box-shadow: 0 0 50px rgba(184,134,11,0.4);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .inventory-header {
+      background: linear-gradient(135deg, #2a2a3e 0%, #1a1a2e 100%);
+      padding: 25px 30px;
+      border-bottom: 2px solid #b8860b;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .inventory-title {
+      color: #d4a84b;
+      font-size: 28px;
+      font-weight: bold;
+      text-shadow: 0 0 20px rgba(212,168,75,0.5);
+    }
+
+    .inventory-content {
+      padding: 30px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .inventory-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+    }
+
+    .inventory-item {
+      background: rgba(255,255,255,0.05);
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 15px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .inventory-item:hover {
+      transform: translateY(-3px);
+      border-color: var(--item-color, #b8860b);
+    }
+
+    .inventory-item.equipped {
+      border-color: #22c55e;
+      box-shadow: 0 0 15px rgba(34,197,94,0.3);
+    }
+
+    .inventory-item-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .inventory-item-name {
+      color: #fff;
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .inventory-item-desc {
+      color: rgba(255,255,255,0.5);
+      font-size: 11px;
+      line-height: 1.3;
+    }
+
+    .inventory-item-badge {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: #22c55e;
+      color: #fff;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+
+    .inventory-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      justify-content: center;
+    }
+
+    .inventory-tab {
+      padding: 8px 20px;
+      border-radius: 20px;
+      border: 2px solid rgba(255,255,255,0.2);
+      background: transparent;
+      color: #ccc;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .inventory-tab:hover {
+      border-color: #d4a84b;
+      color: #d4a84b;
+    }
+
+    .inventory-tab.active {
+      background: linear-gradient(135deg, #d4a84b 0%, #b8860b 100%);
+      border-color: #d4a84b;
+      color: #fff;
+    }
+
+    /* 宝箱开启动画 */
+    .chest-open-animation {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      border: 3px solid #a855f7;
+      border-radius: 20px;
+      padding: 40px 60px;
+      text-align: center;
+      z-index: 3000;
+      box-shadow: 0 0 50px rgba(168,85,247,0.5);
+      animation: chestPop 0.5s ease forwards;
+    }
+
+    @keyframes chestPop {
+      0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+      50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 1200px) {
+      .class-cards {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .difficulty-cards {
+        grid-template-columns: 1fr;
+        max-width: 400px;
+        margin: 0 auto 40px;
+      }
+      .achievement-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .class-cards {
+        grid-template-columns: 1fr;
+      }
+      .class-select-title, .difficulty-select-title {
+        font-size: 36px;
+      }
+      .achievement-grid {
+        grid-template-columns: 1fr;
+      }
+      .achievement-modal {
+        width: 95vw;
+        max-height: 85vh;
+      }
+      .achievement-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 登录页面 -->
+  <div class="cover-container" id="loginPage">
+    <div class="cover-background"></div>
+    <div class="button-container">
+      <button class="game-btn btn-login" onclick="showLoginModal()">登入</button>
+      <button class="game-btn btn-start" onclick="startGame()">开始游戏</button>
+      <button class="game-btn btn-exit" onclick="exitGame()">退出</button>
+    </div>
+    <div class="tip-message" id="tipMessage">请先登录账号后再开始游戏</div>
+  </div>
+
+  <!-- 主菜单页面 -->
+  <div class="main-menu-container hidden" id="mainMenuPage">
+    <div class="main-menu-bg"></div>
+    <!-- 货币显示栏 -->
+    <div class="currency-bar" id="currencyBar">
+      <div class="currency-item currency-gold">
+        <span class="currency-icon">🪙</span>
+        <span id="goldAmount">0</span>
+      </div>
+      <div class="currency-item currency-diamond">
+        <span class="currency-icon">💎</span>
+        <span id="diamondAmount">0</span>
+      </div>
+      <div class="currency-item currency-chest" id="chestItem" style="display:none;">
+        <span class="currency-icon">📦</span>
+        <span id="chestAmount">0</span>
+      </div>
+    </div>
+    <div class="main-menu-content">
+      <div class="main-menu-title">VS FATE</div>
+      <div class="main-menu-subtitle">命运对决</div>
+      <div class="main-menu-grid">
+        <div class="main-menu-item" style="--menu-color: #ef4444; --menu-glow: rgba(239,68,68,0.3);" onclick="showClassSelectPage()">
+          <span class="main-menu-item-icon">⚔️</span>
+          <div class="main-menu-item-name">战斗</div>
+          <div class="main-menu-item-desc">选择职业，挑战关卡</div>
+        </div>
+        <div class="main-menu-item" style="--menu-color: #f59e0b; --menu-glow: rgba(245,158,11,0.3);" onclick="showShopPage()">
+          <span class="main-menu-item-icon">🏪</span>
+          <div class="main-menu-item-name">商店</div>
+          <div class="main-menu-item-desc">购买道具与装备</div>
+        </div>
+        <div class="main-menu-item" style="--menu-color: #10b981; --menu-glow: rgba(16,185,129,0.3);" onclick="showPetPage()">
+          <span class="main-menu-item-icon">🐾</span>
+          <div class="main-menu-item-name">宠物</div>
+          <div class="main-menu-item-desc">培养你的战斗伙伴</div>
+        </div>
+        <div class="main-menu-item" style="--menu-color: #3b82f6; --menu-glow: rgba(59,130,246,0.3);" onclick="showItemPage()">
+          <span class="main-menu-item-icon">🎒</span>
+          <div class="main-menu-item-name">道具</div>
+          <div class="main-menu-item-desc">管理你的物品背包</div>
+        </div>
+      </div>
+      <!-- 成就和图鉴按钮 -->
+      <div style="display: flex; gap: 15px; justify-content: center; margin-bottom: 20px;">
+        <button class="game-btn btn-achievement" onclick="showAchievementPage()" id="achievementBtn" style="display:none;">
+          🏆 成就
+          <span class="achievement-badge" id="achievementBadge" style="display:none;">0</span>
+        </button>
+        <button class="game-btn btn-encyclopedia" onclick="showWeaponEncyclopedia()" id="weaponBtn" style="display:none;">
+          ⚔️ 图鉴
+        </button>
+      </div>
+      <button class="main-menu-back" onclick="backToLoginFromMenu()">返回封面</button>
+    </div>
+  </div>
+
+  <!-- 职业选择页面 -->
+  <div class="cover-container hidden" id="classSelectPage">
+    <div class="class-select-bg"></div>
+    <div class="class-select-content">
+      <h1 class="class-select-title">选择你的职业</h1>
+      <p class="class-select-subtitle">每个职业都有独特的战斗风格</p>
+      <div class="class-cards" id="classCardsContainer"></div>
+      <button class="game-btn btn-cancel" onclick="backToMainMenu()">返回主菜单</button>
+    </div>
+  </div>
+
+  <!-- 难度选择页面 -->
+  <div class="cover-container hidden" id="difficultySelectPage">
+    <div class="difficulty-select-bg"></div>
+    <div class="difficulty-select-content">
+      <h1 class="difficulty-select-title">选择战斗难度</h1>
+      <p class="difficulty-select-subtitle">难度越高，Boss越强，但奖励也越丰厚</p>
+      <div class="difficulty-cards" id="difficultyCardsContainer"></div>
+      <button class="game-btn btn-cancel" onclick="backToClassSelect()">返回职业选择</button>
+    </div>
+  </div>
+
+  <!-- 成就系统弹窗 -->
+  <div class="modal-overlay" id="achievementModal">
+    <div class="achievement-modal">
+      <div class="achievement-header">
+        <div class="achievement-header-title">
+          <span class="trophy-icon">🏆</span>
+          <span>成就系统</span>
+        </div>
+        <div class="achievement-stats">
+          <div>已获得: <span id="achievementsEarned">0</span>/<span id="achievementsTotal">0</span></div>
+        </div>
+        <button class="achievement-close-btn" onclick="closeAchievementModal()">×</button>
+      </div>
+      <div class="achievement-content" id="achievementContent">
+        <!-- 成就内容将动态生成 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 武器图鉴弹窗 -->
+  <div class="weapon-encyclopedia-overlay" id="weaponEncyclopediaOverlay">
+    <div class="weapon-encyclopedia-modal">
+      <div class="weapon-encyclopedia-header">
+        <div class="weapon-encyclopedia-title">
+          <span>⚔️</span>
+          <span>武器图鉴</span>
+        </div>
+        <div class="weapon-encyclopedia-stats">
+          <div>已收集: <span id="weaponsCollected">0</span>/<span id="weaponsTotal">15</span></div>
+        </div>
+        <button class="achievement-close-btn" onclick="closeWeaponEncyclopedia()">×</button>
+      </div>
+      <div class="weapon-encyclopedia-content">
+        <div class="weapon-tabs">
+          <button class="weapon-tab active" onclick="switchEncyclopediaTab('weapon')">武器</button>
+          <button class="weapon-tab" onclick="switchEncyclopediaTab('pet')">宠物</button>
+        </div>
+        <div id="encyclopediaContent">
+          <div class="weapon-tabs" id="weaponFilterTabs">
+            <button class="weapon-tab active" onclick="filterWeapons('all')">全部</button>
+            <button class="weapon-tab" onclick="filterWeapons('common')">普通</button>
+            <button class="weapon-tab" onclick="filterWeapons('rare')">稀有</button>
+            <button class="weapon-tab" onclick="filterWeapons('epic')">史诗</button>
+            <button class="weapon-tab" onclick="filterWeapons('legendary')">传说</button>
+          </div>
+          <div class="weapon-tabs" id="petFilterTabs" style="display:none;">
+            <button class="weapon-tab active" onclick="filterPets('all')">全部</button>
+            <button class="weapon-tab" onclick="filterPets('common')">普通</button>
+            <button class="weapon-tab" onclick="filterPets('rare')">稀有</button>
+            <button class="weapon-tab" onclick="filterPets('epic')">史诗</button>
+            <button class="weapon-tab" onclick="filterPets('legendary')">传说</button>
+          </div>
+          <div class="weapon-grid" id="weaponGrid"></div>
+          <div class="weapon-grid" id="petGrid" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 宠物弹窗 -->
+  <div class="shop-overlay" id="petOverlay">
+    <div class="shop-modal">
+      <div class="shop-header">
+        <div class="shop-title">
+          <span>🐾</span>
+          <span>宠物系统</span>
+        </div>
+        <div style="display: flex; gap: 15px; align-items: center;">
+          <div class="currency-item currency-diamond" style="position: static;">
+            <span class="currency-icon">💎</span>
+            <span id="petDiamondAmount">0</span>
+          </div>
+          <button class="shop-close-btn" onclick="closePetPage()">×</button>
+        </div>
+      </div>
+      <div class="shop-content">
+        <div id="petContainer"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 商店弹窗 -->
+  <div class="shop-overlay" id="shopOverlay">
+    <div class="shop-modal">
+      <div class="shop-header">
+        <div class="shop-title">
+          <span>🏪</span>
+          <span>道具商店</span>
+        </div>
+        <div style="display: flex; gap: 15px; align-items: center;">
+          <div class="currency-item currency-gold" style="position: static;">
+            <span class="currency-icon">🪙</span>
+            <span id="shopGoldAmount">0</span>
+          </div>
+          <button class="shop-close-btn" onclick="closeShop()">×</button>
+        </div>
+      </div>
+      <div class="shop-content">
+        <div class="shop-grid" id="shopGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 背包弹窗 -->
+  <div class="inventory-overlay" id="inventoryOverlay">
+    <div class="inventory-modal">
+      <div class="inventory-header">
+        <div class="inventory-title">🎒 我的背包</div>
+        <button class="shop-close-btn" onclick="closeInventory()">×</button>
+      </div>
+      <div class="inventory-content">
+        <div class="inventory-tabs">
+          <button class="inventory-tab active" onclick="filterInventory('all')">全部</button>
+          <button class="inventory-tab" onclick="filterInventory('consumable')">消耗品</button>
+          <button class="inventory-tab" onclick="filterInventory('equipped')">已携带</button>
+        </div>
+        <div class="inventory-grid" id="inventoryGrid"></div>
+        <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 10px; color: rgba(255,255,255,0.6); font-size: 13px; text-align: center;">
+          💡 点击道具可查看详情，携带的道具可在战斗中使用（最多携带2个）
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 登录弹窗 -->
+  <div class="modal-overlay" id="loginModal">
+    <div class="login-modal">
+      <div class="modal-title" id="modalTitle">账号登录</div>
+      <div class="input-group">
+        <label>用户名</label>
+        <input type="text" id="username" placeholder="请输入用户名" maxlength="20">
+      </div>
+      <div class="input-group">
+        <label>密码</label>
+        <input type="password" id="password" placeholder="请输入密码" maxlength="20">
+      </div>
+      <div class="error-message" id="errorMsg"></div>
+      <div class="success-message" id="successMsg"></div>
+      <div class="modal-buttons">
+        <button class="modal-btn btn-confirm" id="confirmBtn" onclick="handleConfirm()">登录</button>
+        <button class="modal-btn btn-cancel" onclick="closeModal()">取消</button>
+      </div>
+      <div class="modal-buttons" style="margin-top: 15px;">
+        <button class="modal-btn btn-switch" id="switchBtn" onclick="switchMode()">还没有账号？点击注册</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 职业数据
+    const CLASSES = {
+      samurai: {
+        id: 'samurai',
+        name: '武士',
+        icon: '⚔️',
+        description: '攻守兼备的近战职业',
+        hp: 50,
+        maxHp: 50,
+        np: 20,
+        maxNp: 20,
+        color: '#c94c4c',
+        skills: [
+          { id: 'juejin', name: '决进', npCost: 1, damage: 5, type: 'attack', description: '造成5点伤害', color: '#4a90d9' },
+          { id: 'qianlong', name: '潜龙', npCost: 2, type: 'defense', description: '本回合无敌', color: '#c94c4c' },
+          { id: 'jiushi', name: '酒诗', npCost: 4, heal: 10, type: 'heal', description: '回复10点HP', color: '#8b5a9f' }
+        ]
+      },
+      mage: {
+        id: 'mage',
+        name: '法师',
+        icon: '🔮',
+        description: '高爆发远程魔法职业',
+        hp: 40,
+        maxHp: 40,
+        np: 30,
+        maxNp: 30,
+        color: '#6b5ce7',
+        skills: [
+          { id: 'fireball', name: '火球术', npCost: 2, damage: 8, type: 'attack', description: '造成8点伤害', color: '#ff6b35' },
+          { id: 'magicShield', name: '魔力盾', npCost: 3, shield: 5, type: 'defense', description: '获得5点护盾', color: '#4ecdc4' },
+          { id: 'elementalStorm', name: '元素风暴', npCost: 6, damage: 15, type: 'attack', description: '造成15点伤害', color: '#a855f7' }
+        ]
+      },
+      archer: {
+        id: 'archer',
+        name: '射手',
+        icon: '🏹',
+        description: '灵活多变的远程物理职业',
+        hp: 45,
+        maxHp: 45,
+        np: 18,
+        maxNp: 18,
+        color: '#22c55e',
+        skills: [
+          { id: 'preciseShot', name: '精准射击', npCost: 1, damage: 4, type: 'attack', description: '造成4点伤害', color: '#16a34a' },
+          { id: 'rapidFire', name: '连射', npCost: 3, damage: 6, type: 'attack', description: '造成6点伤害', color: '#15803d' },
+          { id: 'poisonArrow', name: '毒箭', npCost: 2, damage: 3, poison: 2, type: 'attack', description: '造成3点伤害+中毒', color: '#84cc16' }
+        ]
+      },
+      guardian: {
+        id: 'guardian',
+        name: '盾卫',
+        icon: '🛡️',
+        description: '坚不可摧的防御职业',
+        hp: 70,
+        maxHp: 70,
+        np: 12,
+        maxNp: 12,
+        color: '#64748b',
+        skills: [
+          { id: 'block', name: '格挡', npCost: 1, damageReduction: 3, type: 'defense', description: '下回合减伤3点', color: '#475569' },
+          { id: 'shieldBash', name: '盾击', npCost: 2, damage: 3, type: 'attack', description: '造成3点伤害', color: '#334155' },
+          { id: 'ironWall', name: '铁壁', npCost: 3, heal: 5, shield: 3, type: 'heal', description: '回复5HP+护盾', color: '#1e293b' }
+        ]
+      }
+    };
+
+    // 难度数据
+    const DIFFICULTIES = [
+      {
+        id: 'easy',
+        name: '简单',
+        icon: '🌱',
+        description: '适合新手体验，Boss较为温和',
+        bossHp: 40,
+        bossMaxHp: 40,
+        bossNp: 20,
+        bossMaxNp: 20,
+        bossAttackMin: 3,
+        bossAttackMax: 6,
+        bossHeavyMin: 6,
+        bossHeavyMax: 10,
+        bossHealMin: 5,
+        bossHealMax: 8,
+        aiBehavior: 'passive',
+        features: [
+          '1关小兵 + 1关Boss',
+          '击败小兵后回复30%HP和50%NP',
+          '掉落普通~稀有品质装备',
+          '适合新手体验'
+        ]
+      },
+      {
+        id: 'normal',
+        name: '普通',
+        icon: '⚔️',
+        description: '标准难度，平衡的挑战体验',
+        bossHp: 50,
+        bossMaxHp: 50,
+        bossNp: 30,
+        bossMaxNp: 30,
+        bossAttackMin: 5,
+        bossAttackMax: 10,
+        bossHeavyMin: 10,
+        bossHeavyMax: 15,
+        bossHealMin: 5,
+        bossHealMax: 10,
+        aiBehavior: 'balanced',
+        features: [
+          '2关小兵 + 1关Boss',
+          '击败小兵后回复30%HP和50%NP',
+          '掉落普通~史诗品质装备',
+          '适合大多数玩家'
+        ]
+      },
+      {
+        id: 'hard',
+        name: '困难',
+        icon: '🔥',
+        description: '高难度挑战，Boss极具威胁',
+        bossHp: 60,
+        bossMaxHp: 60,
+        bossNp: 40,
+        bossMaxNp: 40,
+        bossAttackMin: 8,
+        bossAttackMax: 12,
+        bossHeavyMin: 15,
+        bossHeavyMax: 20,
+        bossHealMin: 8,
+        bossHealMax: 12,
+        aiBehavior: 'aggressive',
+        features: [
+          '3关小兵 + 1关精英 + 1关Boss',
+          '击败小兵后回复30%HP和50%NP',
+          '掉落稀有~传说品质装备',
+          '最具挑战性的体验'
+        ]
+      }
+    ];
+
+    // 成就数据配置
+    const ACHIEVEMENTS = [
+      {
+        id: 'defeat_easy',
+        name: '初出茅庐',
+        description: '击败简单难度的Boss，迈出冒险的第一步',
+        condition: '击败简单难度Boss',
+        icon: '🥉',
+        tier: 1,
+        category: 'boss',
+        difficulty: 'easy'
+      },
+      {
+        id: 'defeat_normal',
+        name: '勇者之路',
+        description: '击败普通难度的Boss，证明你的实力',
+        condition: '击败普通难度Boss',
+        icon: '🥈',
+        tier: 2,
+        category: 'boss',
+        difficulty: 'normal'
+      },
+      {
+        id: 'defeat_hard',
+        name: '传奇征服者',
+        description: '击败困难难度的Boss，成为真正的传奇',
+        condition: '击败困难难度Boss',
+        icon: '🥇',
+        tier: 3,
+        category: 'boss',
+        difficulty: 'hard'
+      },
+      {
+        id: 'all_difficulties',
+        name: '全能战士',
+        description: '击败所有难度的Boss，展现全面实力',
+        condition: '击败所有难度Boss',
+        icon: '👑',
+        tier: 3,
+        category: 'special',
+        difficulty: 'all'
+      },
+      {
+        id: 'first_victory',
+        name: '首胜',
+        description: '获得第一场战斗的胜利',
+        condition: '获得首胜',
+        icon: '🎯',
+        tier: 1,
+        category: 'special',
+        difficulty: 'any'
+      },
+      {
+        id: 'master_samurai',
+        name: '剑圣',
+        description: '使用武士职业获得胜利',
+        condition: '使用武士获胜',
+        icon: '⚔️',
+        tier: 2,
+        category: 'class',
+        difficulty: 'any'
+      },
+      {
+        id: 'master_mage',
+        name: '大魔导师',
+        description: '使用法师职业获得胜利',
+        condition: '使用法师获胜',
+        icon: '🔮',
+        tier: 2,
+        category: 'class',
+        difficulty: 'any'
+      },
+      {
+        id: 'master_archer',
+        name: '神射手',
+        description: '使用射手职业获得胜利',
+        condition: '使用射手获胜',
+        icon: '🏹',
+        tier: 2,
+        category: 'class',
+        difficulty: 'any'
+      },
+      {
+        id: 'master_guardian',
+        name: '不朽盾墙',
+        description: '使用盾卫职业获得胜利',
+        condition: '使用盾卫获胜',
+        icon: '🛡️',
+        tier: 2,
+        category: 'class',
+        difficulty: 'any'
+      },
+      // 货币类成就
+      {
+        id: 'rich_gold_1000',
+        name: '小富翁',
+        description: '累计获得1000金币',
+        condition: '累计获得1000金币',
+        icon: '🪙',
+        tier: 1,
+        category: 'currency',
+        difficulty: 'any'
+      },
+      {
+        id: 'rich_gold_10000',
+        name: '大富翁',
+        description: '累计获得10000金币',
+        condition: '累计获得10000金币',
+        icon: '💰',
+        tier: 2,
+        category: 'currency',
+        difficulty: 'any'
+      },
+      {
+        id: 'diamond_collector_100',
+        name: '钻石收集者',
+        description: '累计获得100钻石',
+        condition: '累计获得100钻石',
+        icon: '💎',
+        tier: 2,
+        category: 'currency',
+        difficulty: 'any'
+      },
+      {
+        id: 'diamond_collector_500',
+        name: '钻石大亨',
+        description: '累计获得500钻石',
+        condition: '累计获得500钻石',
+        icon: '💠',
+        tier: 3,
+        category: 'currency',
+        difficulty: 'any'
+      },
+      // 装备类成就
+      {
+        id: 'first_equipment',
+        name: '装备新手',
+        description: '首次获得装备',
+        condition: '获得第一件装备',
+        icon: '🎁',
+        tier: 1,
+        category: 'equipment',
+        difficulty: 'any'
+      },
+      {
+        id: 'equipment_collector_5',
+        name: '装备收藏家',
+        description: '累计获得5件不同装备',
+        condition: '获得5件不同装备',
+        icon: '🎒',
+        tier: 2,
+        category: 'equipment',
+        difficulty: 'any'
+      },
+      {
+        id: 'equipment_collector_10',
+        name: '装备大师',
+        description: '累计获得10件不同装备',
+        condition: '获得10件不同装备',
+        icon: '🏆',
+        tier: 3,
+        category: 'equipment',
+        difficulty: 'any'
+      },
+      {
+        id: 'legendary_equipment',
+        name: '传说装备',
+        description: '首次获得传说品质装备',
+        condition: '获得传说装备',
+        icon: '👑',
+        tier: 3,
+        category: 'equipment',
+        difficulty: 'any'
+      },
+      // 宠物类成就
+      {
+        id: 'first_pet',
+        name: '宠物训练师',
+        description: '首次获得宠物',
+        condition: '获得第一只宠物',
+        icon: '🐣',
+        tier: 1,
+        category: 'pet',
+        difficulty: 'any'
+      },
+      {
+        id: 'pet_collector_5',
+        name: '宠物收藏家',
+        description: '累计获得5只不同宠物',
+        condition: '获得5只不同宠物',
+        icon: '🐾',
+        tier: 2,
+        category: 'pet',
+        difficulty: 'any'
+      },
+      {
+        id: 'pet_collector_all',
+        name: '宠物大师',
+        description: '收集全部10只宠物',
+        condition: '收集全部宠物',
+        icon: '🏅',
+        tier: 3,
+        category: 'pet',
+        difficulty: 'any'
+      },
+      {
+        id: 'legendary_pet',
+        name: '传说宠物',
+        description: '获得传说品质宠物',
+        condition: '获得传说宠物',
+        icon: '🔥',
+        tier: 3,
+        category: 'pet',
+        difficulty: 'any'
+      },
+      // 道具类成就
+      {
+        id: 'first_item',
+        name: '道具新手',
+        description: '首次购买道具',
+        condition: '购买第一件道具',
+        icon: '🛒',
+        tier: 1,
+        category: 'item',
+        difficulty: 'any'
+      },
+      {
+        id: 'item_user',
+        name: '道具专家',
+        description: '在战斗中使用道具',
+        condition: '战斗中使用道具',
+        icon: '🧪',
+        tier: 2,
+        category: 'item',
+        difficulty: 'any'
+      },
+      // 抽卡类成就
+      {
+        id: 'first_gacha',
+        name: '初次召唤',
+        description: '首次进行宠物召唤',
+        condition: '首次召唤宠物',
+        icon: '🎲',
+        tier: 1,
+        category: 'gacha',
+        difficulty: 'any'
+      },
+      {
+        id: 'gacha_master',
+        name: '召唤大师',
+        description: '累计进行20次宠物召唤',
+        condition: '召唤20次宠物',
+        icon: '✨',
+        tier: 2,
+        category: 'gacha',
+        difficulty: 'any'
+      },
+      // 战斗类成就
+      {
+        id: 'perfect_victory',
+        name: '完美胜利',
+        description: '满血击败Boss',
+        condition: '满血击败Boss',
+        icon: '❤️',
+        tier: 2,
+        category: 'combat',
+        difficulty: 'any'
+      },
+      {
+        id: 'no_damage',
+        name: '无伤通关',
+        description: '不受到任何伤害击败Boss',
+        condition: '无伤击败Boss',
+        icon: '🛡️',
+        tier: 3,
+        category: 'combat',
+        difficulty: 'any'
+      },
+      {
+        id: 'victory_streak_3',
+        name: '连胜王者',
+        description: '连续获胜3场',
+        condition: '连胜3场',
+        icon: '🔥',
+        tier: 2,
+        category: 'combat',
+        difficulty: 'any'
+      }
+    ];
+
+    // 武器图鉴数据（与index.html中的EQUIPMENTS对应）
+    const WEAPON_DATA = [
+      { id: 'wooden_sword', name: '木剑', icon: '🗡️', rarity: 'common', color: '#888', description: '攻击力 +2' },
+      { id: 'leather_armor', name: '皮甲', icon: '🦺', rarity: 'common', color: '#888', description: '最大HP +5' },
+      { id: 'small_potion', name: '小药水', icon: '🧪', rarity: 'common', color: '#888', description: 'NP上限 +3' },
+      { id: 'iron_ring', name: '铁戒指', icon: '💍', rarity: 'common', color: '#888', description: '攻击+1 HP+3' },
+      { id: 'training_gloves', name: '训练手套', icon: '🧤', rarity: 'common', color: '#888', description: '每回合回复1NP' },
+      { id: 'iron_sword', name: '铁剑', icon: '⚔️', rarity: 'rare', color: '#3b82f6', description: '攻击力 +4' },
+      { id: 'chain_mail', name: '锁子甲', icon: '👕', rarity: 'rare', color: '#3b82f6', description: '最大HP +10' },
+      { id: 'mana_crystal', name: '魔力水晶', icon: '💎', rarity: 'rare', color: '#3b82f6', description: 'NP上限 +5' },
+      { id: 'vampiric_fang', name: '吸血獠牙', icon: '🦷', rarity: 'rare', color: '#3b82f6', description: '造成伤害的20%转化为HP' },
+      { id: 'swift_boots', name: '疾风靴', icon: '👢', rarity: 'rare', color: '#3b82f6', description: '15%概率闪避攻击' },
+      { id: 'flame_blade', name: '烈焰之刃', icon: '🔥', rarity: 'epic', color: '#a855f7', description: '攻击+6 附加灼烧' },
+      { id: 'dragon_scale', name: '龙鳞甲', icon: '🐉', rarity: 'epic', color: '#a855f7', description: 'HP+15 战斗开始获得护盾' },
+      { id: 'sage_staff', name: '贤者法杖', icon: '🔮', rarity: 'epic', color: '#a855f7', description: 'NP+8 技能伤害+20%' },
+      { id: 'excalibur', name: '王者之剑', icon: '👑', rarity: 'legendary', color: '#eab308', description: '攻击+10 30%暴击' },
+      { id: 'phoenix_feather', name: '凤凰之羽', icon: '🪶', rarity: 'legendary', color: '#eab308', description: '死亡时复活并回复30%HP' }
+    ];
+
+    // 宠物数据
+    const PET_DATA = [
+      // 普通品质（全属性+1）
+      { id: 'pet_slime', name: '史莱姆', icon: '🟢', rarity: 'common', color: '#888', description: '全属性+1', statBonus: 1 },
+      { id: 'pet_chicken', name: '小鸡', icon: '🐤', rarity: 'common', color: '#888', description: '全属性+1', statBonus: 1 },
+      { id: 'pet_ant', name: '蚂蚁', icon: '🐜', rarity: 'common', color: '#888', description: '全属性+1', statBonus: 1 },
+      { id: 'pet_frog', name: '青蛙', icon: '🐸', rarity: 'common', color: '#888', description: '全属性+1', statBonus: 1 },
+      // 稀有品质（全属性+2）
+      { id: 'pet_cat', name: '猫咪', icon: '🐱', rarity: 'rare', color: '#3b82f6', description: '全属性+2', statBonus: 2 },
+      { id: 'pet_dog', name: '狗狗', icon: '🐶', rarity: 'rare', color: '#3b82f6', description: '全属性+2', statBonus: 2 },
+      { id: 'pet_rabbit', name: '兔子', icon: '🐰', rarity: 'rare', color: '#3b82f6', description: '全属性+2', statBonus: 2 },
+      // 史诗品质（全属性+3）
+      { id: 'pet_wolf', name: '战狼', icon: '🐺', rarity: 'epic', color: '#a855f7', description: '全属性+3', statBonus: 3 },
+      { id: 'pet_dragon', name: '幼龙', icon: '🐲', rarity: 'epic', color: '#a855f7', description: '全属性+3', statBonus: 3 },
+      // 传说品质（全属性+4）
+      { id: 'pet_phoenix', name: '凤凰', icon: '🔥', rarity: 'legendary', color: '#eab308', description: '全属性+4', statBonus: 4 }
+    ];
+
+    // 宠物卡池概率配置
+    const PET_GACHA_RATES = {
+      common: 0.35,
+      rare: 0.25,
+      epic: 0.20,
+      legendary: 0.10
+    };
+
+    // 商店道具数据
+    const SHOP_ITEMS = [
+      {
+        id: 'item_common',
+        name: '普通药水',
+        icon: '🧪',
+        rarity: 'common',
+        color: '#888',
+        price: 200,
+        priceType: 'gold',
+        description: '恢复5点HP和5点NP',
+        effect: '恢复5HP, 5NP, 攻击+10%(2回合)',
+        stats: { hp: 5, np: 5, attackBoost: 0.1, duration: 2 }
+      },
+      {
+        id: 'item_rare',
+        name: '稀有护盾',
+        icon: '🛡️',
+        rarity: 'rare',
+        color: '#3b82f6',
+        price: 400,
+        priceType: 'gold',
+        description: '恢复10点HP和10点NP',
+        effect: '恢复10HP, 10NP, 护盾20%HP(3回合)',
+        stats: { hp: 10, np: 10, shieldPercent: 0.2, duration: 3 }
+      },
+      {
+        id: 'item_epic',
+        name: '史诗精华',
+        icon: '✨',
+        rarity: 'epic',
+        color: '#a855f7',
+        price: 600,
+        priceType: 'gold',
+        description: '恢复20点HP和20点NP',
+        effect: '恢复20HP, 20NP, 全属性+5%(3回合)',
+        stats: { hp: 20, np: 20, allBoost: 0.05, duration: 3 }
+      },
+      {
+        id: 'item_legendary',
+        name: '传说圣水',
+        icon: '🏆',
+        rarity: 'legendary',
+        color: '#eab308',
+        price: 800,
+        priceType: 'gold',
+        description: '恢复20点HP和20点NP',
+        effect: '恢复20HP, 20NP, 全属性+10%, 护盾30%HP(3回合)',
+        stats: { hp: 20, np: 20, allBoost: 0.1, shieldPercent: 0.3, duration: 3 }
+      }
+    ];
+
+    // 当前状态
+    let currentMode = 'login';
+    let currentUser = null;
+    let currentWeaponFilter = 'all';
+    let currentInventoryFilter = 'all';
+
+    // 初始化
+    window.onload = () => {
+      currentUser = localStorage.getItem('currentUser');
+      if (currentUser) {
+        document.getElementById('tipMessage').textContent = `欢迎回来，${currentUser}！`;
+        showAchievementBtn();
+      }
+
+      // 检查URL哈希，如果是#mainmenu则直接显示主菜单
+      if (window.location.hash === '#mainmenu') {
+        if (currentUser) {
+          showMainMenuPage();
+        }
+      }
+    };
+
+    // 显示成就按钮
+    function showAchievementBtn() {
+      const btn = document.getElementById('achievementBtn');
+      const weaponBtn = document.getElementById('weaponBtn');
+      const badge = document.getElementById('achievementBadge');
+      if (btn) {
+        btn.style.display = 'inline-block';
+        updateAchievementBadge();
+      }
+      if (weaponBtn) {
+        weaponBtn.style.display = 'inline-block';
+      }
+    }
+
+    // 更新成就徽章
+    function updateAchievementBadge() {
+      const badge = document.getElementById('achievementBadge');
+      if (!badge || !currentUser) return;
+      
+      const userAchievements = getUserAchievements();
+      const newCount = userAchievements.newlyUnlocked || 0;
+      
+      if (newCount > 0) {
+        badge.textContent = newCount;
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    // 获取用户成就数据
+    function getUserAchievements() {
+      const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+      if (!users[currentUser]) return { earned: [], progress: {}, newlyUnlocked: 0 };
+      
+      return users[currentUser].achievements || { earned: [], progress: {}, newlyUnlocked: 0 };
+    }
+
+    // 保存用户成就数据
+    function saveUserAchievements(achievements) {
+      const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+      if (!users[currentUser]) return;
+      
+      users[currentUser].achievements = achievements;
+      localStorage.setItem('vsFateUsers', JSON.stringify(users));
+    }
+
+    // 解锁成就
+    function unlockAchievement(achievementId) {
+      const userAchievements = getUserAchievements();
+      
+      if (userAchievements.earned.includes(achievementId)) {
+        return false; // 已解锁
+      }
+      
+      userAchievements.earned.push(achievementId);
+      userAchievements.newlyUnlocked = (userAchievements.newlyUnlocked || 0) + 1;
+      
+      // 记录解锁时间
+      if (!userAchievements.unlockTimes) userAchievements.unlockTimes = {};
+      userAchievements.unlockTimes[achievementId] = new Date().toISOString();
+      
+      saveUserAchievements(userAchievements);
+      
+      // 显示解锁动画
+      showUnlockAnimation(achievementId);
+      
+      return true;
+    }
+
+    // 显示解锁动画
+    function showUnlockAnimation(achievementId) {
+      const achievement = ACHIEVEMENTS.find(a => a.id === achievementId);
+      if (!achievement) return;
+      
+      const anim = document.createElement('div');
+      anim.className = 'achievement-unlock-animation';
+      anim.innerHTML = `
+        <span class="unlock-icon">${achievement.icon}</span>
+        <div class="unlock-title">🏆 成就解锁！</div>
+        <div class="unlock-name">${achievement.name}</div>
+        <div class="unlock-description">${achievement.description}</div>
+      `;
+      document.body.appendChild(anim);
+      
+      setTimeout(() => {
+        if (anim.parentNode) anim.parentNode.removeChild(anim);
+      }, 3500);
+    }
+
+    // 检查并解锁相关成就
+    function checkAchievements(victory, difficulty, classId) {
+      if (!victory || !currentUser) return;
+      
+      let newlyUnlocked = [];
+      
+      // 首胜成就
+      if (unlockAchievement('first_victory')) {
+        newlyUnlocked.push('first_victory');
+      }
+      
+      // 难度成就
+      const diffAchievementMap = {
+        'easy': 'defeat_easy',
+        'normal': 'defeat_normal',
+        'hard': 'defeat_hard'
+      };
+      
+      if (difficulty && diffAchievementMap[difficulty]) {
+        if (unlockAchievement(diffAchievementMap[difficulty])) {
+          newlyUnlocked.push(diffAchievementMap[difficulty]);
+        }
+      }
+      
+      // 职业成就
+      const classAchievementMap = {
+        'samurai': 'master_samurai',
+        'mage': 'master_mage',
+        'archer': 'master_archer',
+        'guardian': 'master_guardian'
+      };
+      
+      if (classId && classAchievementMap[classId]) {
+        if (unlockAchievement(classAchievementMap[classId])) {
+          newlyUnlocked.push(classAchievementMap[classId]);
+        }
+      }
+      
+      // 检查全能战士成就
+      const userAchievements = getUserAchievements();
+      const hasEasy = userAchievements.earned.includes('defeat_easy');
+      const hasNormal = userAchievements.earned.includes('defeat_normal');
+      const hasHard = userAchievements.earned.includes('defeat_hard');
+      
+      if (hasEasy && hasNormal && hasHard) {
+        if (unlockAchievement('all_difficulties')) {
+          newlyUnlocked.push('all_difficulties');
+        }
+      }
+      
+      // 清除新解锁计数（已查看）
+      if (newlyUnlocked.length > 0) {
+        setTimeout(() => {
+          const ach = getUserAchievements();
+          ach.newlyUnlocked = 0;
+          saveUserAchievements(ach);
+          updateAchievementBadge();
+        }, 100);
+      }
+      
+      return newlyUnlocked;
+    }
+
+    // 显示成就页面
+    function showAchievementPage() {
+      if (!currentUser) {
+        alert('请先登录账号');
+        showLoginModal();
+        return;
+      }
+      
+      renderAchievements();
+      document.getElementById('achievementModal').classList.add('show');
+      
+      // 清除新解锁标记
+      const ach = getUserAchievements();
+      if (ach.newlyUnlocked > 0) {
+        ach.newlyUnlocked = 0;
+        saveUserAchievements(ach);
+        updateAchievementBadge();
+      }
+    }
+
+    // 关闭成就弹窗
+    function closeAchievementModal() {
+      document.getElementById('achievementModal').classList.remove('show');
+    }
+
+    // ==================== 武器图鉴功能 ====================
+
+    // 获取用户武器图鉴数据
+    function getUserWeaponCollection() {
+      const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+      if (!users[currentUser]) return [];
+      return users[currentUser].weaponCollection || [];
+    }
+
+    // 保存武器到图鉴
+    function saveWeaponToCollection(weaponIds) {
+      const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+      if (!users[currentUser]) return;
+
+      if (!users[currentUser].weaponCollection) {
+        users[currentUser].weaponCollection = [];
+      }
+
+      weaponIds.forEach(id => {
+        if (!users[currentUser].weaponCollection.includes(id)) {
+          users[currentUser].weaponCollection.push(id);
+        }
+      });
+
+      localStorage.setItem('vsFateUsers', JSON.stringify(users));
+    }
+
+    // 显示武器图鉴
+    function showWeaponEncyclopedia() {
+      if (!currentUser) {
+        alert('请先登录账号');
+        showLoginModal();
+        return;
+      }
+
+      currentWeaponFilter = 'all';
+      renderWeaponGrid();
+      document.getElementById('weaponEncyclopediaOverlay').classList.add('show');
+    }
+
+    // 关闭武器图鉴
+    function closeWeaponEncyclopedia() {
+      document.getElementById('weaponEncyclopediaOverlay').classList.remove('show');
+    }
+
+    // 筛选武器
+    function filterWeapons(rarity) {
+      currentWeaponFilter = rarity;
+
+      // 更新标签样式
+      document.querySelectorAll('.weapon-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      event.target.classList.add('active');
+
+      renderWeaponGrid();
+    }
+
+    // 渲染武器网格
+    function renderWeaponGrid() {
+      const grid = document.getElementById('weaponGrid');
+      const collection = getUserWeaponCollection();
+
+      // 更新统计
+      document.getElementById('weaponsCollected').textContent = collection.length;
+      document.getElementById('weaponsTotal').textContent = WEAPON_DATA.length;
+
+      let weapons = WEAPON_DATA;
+      if (currentWeaponFilter !== 'all') {
+        weapons = weapons.filter(w => w.rarity === currentWeaponFilter);
+      }
+
+      let html = '';
+      weapons.forEach(weapon => {
+        const isObtained = collection.includes(weapon.id);
+        const obtainedClass = isObtained ? 'obtained' : 'not-obtained';
+        const rarityClass = `rarity-${weapon.rarity}`;
+        const rarityText = { common: '普通', rare: '稀有', epic: '史诗', legendary: '传说' }[weapon.rarity];
+
+        html += `
+          <div class="weapon-card ${obtainedClass}">
+            ${isObtained ? '<div class="weapon-obtained-badge">✓</div>' : ''}
+            <span class="weapon-icon">${weapon.icon}</span>
+            <div class="weapon-name">${weapon.name}</div>
+            <div class="weapon-rarity ${rarityClass}">${rarityText}</div>
+            <div class="weapon-effect-text">${weapon.description}</div>
+          </div>
+        `;
+      });
+
+      grid.innerHTML = html;
+    }
+
+    // ==================== 宠物图鉴功能 ====================
+
+    let currentPetFilter = 'all';
+    let currentEncyclopediaTab = 'weapon';
+
+    // 切换图鉴标签
+    function switchEncyclopediaTab(tab) {
+      currentEncyclopediaTab = tab;
+      document.querySelectorAll('.weapon-tabs:first-child .weapon-tab').forEach(t => {
+        t.classList.remove('active');
+      });
+      event.target.classList.add('active');
+
+      if (tab === 'weapon') {
+        document.getElementById('weaponFilterTabs').style.display = 'flex';
+        document.getElementById('petFilterTabs').style.display = 'none';
+        document.getElementById('weaponGrid').style.display = 'grid';
+        document.getElementById('petGrid').style.display = 'none';
+        renderWeaponGrid();
+      } else {
+        document.getElementById('weaponFilterTabs').style.display = 'none';
+        document.getElementById('petFilterTabs').style.display = 'flex';
+        document.getElementById('weaponGrid').style.display = 'none';
+        document.getElementById('petGrid').style.display = 'grid';
+        renderPetGrid();
+      }
+    }
+
+    // 获取用户宠物收集数据
+    function getUserPetCollection() {
+      const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+      if (!users[currentUser]) return [];
+      return users[currentUser].petCollection || [];
+    }
+
+    // 筛选宠物
+    function filterPets(rarity) {
+      currentPetFilter = rarity;
+      document.querySelectorAll('#petFilterTabs .weapon-tab').forEach(t => {
+        t.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      renderPetGrid();
+    }
+
+    // 渲染宠物网格
+    function renderPetGrid() {
+      const grid = document.getElementById('petGrid');
+      const collection = getUserPetCollection();
+
+      let pets = PET_DATA;
+      if (currentPetFilter !== 'all') {
+        pets = pets.filter(p => p.rarity === currentPetFilter);
+      }
+
+      let html = '';
+      pets.forEach(pet => {
+        const isObtained = collection.includes(pet.id);
+        const obtainedClass = isObtained ? 'obtained' : 'not-obtained';
+        const rarityClass = `rarity-${pet.rarity}`;
+        const rarityText = { common: '普通', rare: '稀有', epic: '史诗', legendary: '传说' }[pet.rarity];
+
+        html += `
+          <div class="weapon-card ${obtainedClass}">
+            ${isObtained ? '<div class="weapon-obtained-badge">✓</div>' : ''}
+            <span class="weapon-icon">${pet.icon}</span>
+            <div class="weapon-name">${pet.name}</div>
+            <div class="weapon-rarity ${rarityClass}">${rarityText}</div>
+            <div class="weapon-effect-text">${pet.description}</div>
+          </div>
+        `;
+      });
+
+      grid.innerHTML = html;
+    }
+
+    // ==================== 宠物图鉴功能结束 ====================
+
+    // ==================== 武器图鉴功能结束 ====================
+
+    // 渲染成就列表
+    function renderAchievements() {
+      const content = document.getElementById('achievementContent');
+      const userAchievements = getUserAchievements();
+      const earned = userAchievements.earned || [];
+
+      // 更新统计
+      document.getElementById('achievementsEarned').textContent = earned.length;
+      document.getElementById('achievementsTotal').textContent = ACHIEVEMENTS.length;
+
+      // 按分类分组
+      const categories = {
+        'boss': { name: 'Boss挑战', icon: '👹' },
+        'class': { name: '职业精通', icon: '⚔️' },
+        'currency': { name: '财富积累', icon: '💰' },
+        'equipment': { name: '装备收集', icon: '🎒' },
+        'pet': { name: '宠物养成', icon: '🐾' },
+        'item': { name: '道具使用', icon: '🧪' },
+        'gacha': { name: '召唤大师', icon: '🎲' },
+        'combat': { name: '战斗技巧', icon: '⚡' },
+        'special': { name: '特殊成就', icon: '✨' }
+      };
+
+      let html = '';
+
+      Object.entries(categories).forEach(([catId, catInfo]) => {
+        const catAchievements = ACHIEVEMENTS.filter(a => a.category === catId);
+        if (catAchievements.length === 0) return;
+
+        html += `
+          <div class="achievement-category">
+            <div class="achievement-category-title">
+              <span>${catInfo.icon}</span>
+              <span>${catInfo.name}</span>
+            </div>
+            <div class="achievement-grid">
+        `;
+
+        catAchievements.forEach(ach => {
+          const isEarned = earned.includes(ach.id);
+          const tierClass = `tier-${ach.tier}`;
+          const earnedClass = isEarned ? 'earned' : 'not-earned';
+
+          html += `
+            <div class="achievement-item ${earnedClass}">
+              <span class="achievement-icon ${tierClass}">${ach.icon}</span>
+              <div class="achievement-name">${ach.name}</div>
+              <div class="achievement-description">${ach.description}</div>
+              <div class="achievement-condition">${ach.condition}</div>
+            </div>
+          `;
+        });
+
+        html += `
+            </div>
+          </div>
+        `;
+      });
+
+      content.innerHTML = html;
+    }
+
+    // 显示登录弹窗
+    function showLoginModal() {
+      currentMode = 'login';
+      updateModalUI();
+      document.getElementById('loginModal').classList.add('show');
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
+      document.getElementById('errorMsg').textContent = '';
+      document.getElementById('successMsg').textContent = '';
+    }
+
+    // 关闭弹窗
+    function closeModal() {
+      document.getElementById('loginModal').classList.remove('show');
+    }
+
+    // 更新弹窗UI
+    function updateModalUI() {
+      const title = document.getElementById('modalTitle');
+      const confirmBtn = document.getElementById('confirmBtn');
+      const switchBtn = document.getElementById('switchBtn');
+
+      if (currentMode === 'login') {
+        title.textContent = '账号登录';
+        confirmBtn.textContent = '登录';
+        switchBtn.textContent = '还没有账号？点击注册';
+      } else {
+        title.textContent = '账号注册';
+        confirmBtn.textContent = '注册';
+        switchBtn.textContent = '已有账号？点击登录';
+      }
+    }
+
+    // 切换模式
+    function switchMode() {
+      currentMode = currentMode === 'login' ? 'register' : 'login';
+      updateModalUI();
+      document.getElementById('errorMsg').textContent = '';
+      document.getElementById('successMsg').textContent = '';
+    }
+
+    // 处理确认按钮
+    function handleConfirm() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+
+      if (!username) {
+        document.getElementById('errorMsg').textContent = '请输入用户名';
+        document.getElementById('successMsg').textContent = '';
+        return;
+      }
+
+      if (!password) {
+        document.getElementById('errorMsg').textContent = '请输入密码';
+        document.getElementById('successMsg').textContent = '';
+        return;
+      }
+
+      if (username.length < 3) {
+        document.getElementById('errorMsg').textContent = '用户名至少3个字符';
+        document.getElementById('successMsg').textContent = '';
+        return;
+      }
+
+      if (password.length < 6) {
+        document.getElementById('errorMsg').textContent = '密码至少6个字符';
+        document.getElementById('successMsg').textContent = '';
+        return;
+      }
+
+      const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+
+      if (currentMode === 'login') {
+        if (!users[username]) {
+          document.getElementById('errorMsg').textContent = '用户名不存在';
+          document.getElementById('successMsg').textContent = '';
+          return;
+        }
+        if (users[username].password !== password) {
+          document.getElementById('errorMsg').textContent = '密码错误';
+          document.getElementById('successMsg').textContent = '';
+          return;
+        }
+      } else {
+        if (users[username]) {
+          document.getElementById('errorMsg').textContent = '用户名已存在';
+          document.getElementById('successMsg').textContent = '';
+          return;
+        }
+        users[username] = {
+          password: password,
+          createdAt: new Date().toISOString(),
+          gameData: {
+            playerHp: 50,
+            playerNp: 30,
+            selectedClass: null,
+            selectedDifficulty: null
+          }
+        };
+        localStorage.setItem('vsFateUsers', JSON.stringify(users));
+      }
+
+      localStorage.setItem('currentUser', username);
+      currentUser = username;
+      document.getElementById('successMsg').textContent = '登录成功！';
+      setTimeout(() => {
+        closeModal();
+        showAchievementBtn();
+        showMainMenuPage();
+      }, 1000);
+    }
+
+    // 显示主菜单页面
+    function showMainMenuPage() {
+      document.getElementById('loginPage').classList.add('hidden');
+      document.getElementById('mainMenuPage').classList.remove('hidden');
+      document.getElementById('classSelectPage').classList.add('hidden');
+      document.getElementById('difficultySelectPage').classList.add('hidden');
+      updateCurrencyDisplay();
+    }
+
+    // ==================== 货币系统 ====================
+
+    // 获取用户货币数据
+    function getUserCurrency() {
+      const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+      if (!users[currentUser]) return { gold: 0, diamond: 0, chest: 0 };
+      return users[currentUser].currency || { gold: 0, diamond: 0, chest: 0 };
+    }
+
+    // 保存用户货币数据
+    function saveUserCurrency(currency) {
+      const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+      if (!users[currentUser]) return;
+      users[currentUser].currency = currency;
+      localStorage.setItem('vsFateUsers', JSON.stringify(users));
+    }
+
+    // 获取用户背包中的宝箱数量
+    function getUserChestCount() {
+      const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+      if (!users[currentUser] || !users[currentUser].inventory) return 0;
+      return users[currentUser].inventory.filter(item => item.id === 'chest_item' || item.stats?.chest).length;
+    }
+
+    // 更新货币显示
+    function updateCurrencyDisplay() {
+      const currency = getUserCurrency();
+      document.getElementById('goldAmount').textContent = currency.gold || 0;
+      document.getElementById('diamondAmount').textContent = currency.diamond || 0;
+      document.getElementById('shopGoldAmount').textContent = currency.gold || 0;
+
+      // 更新宠物页面的钻石显示
+      const petDiamondEl = document.getElementById('petDiamondAmount');
+      if (petDiamondEl) {
+        petDiamondEl.textContent = currency.diamond || 0;
+      }
+
+      // 从背包中统计宝箱数量
+      const chestCount = getUserChestCount();
+      const chestItem = document.getElementById('chestItem');
+      const chestAmount = document.getElementById('chestAmount');
+      if (chestCount > 0) {
+        chestItem.style.display = 'flex';
+        chestAmount.textContent = chestCount;
+      } else {
+        chestItem.style.display = 'none';
+      }
+    }
+
+    // 添加货币
+    function addCurrency(gold, diamond, chest) {
+      const currency = getUserCurrency();
+      if (gold) currency.gold = (currency.gold || 0) + gold;
+      if (diamond) currency.diamond = (currency.diamond || 0) + diamond;
+      if (chest) currency.chest = (currency.chest || 0) + chest;
+      saveUserCurrency(currency);
+      updateCurrencyDisplay();
+    }
+
+    // 消耗货币
+    function spendCurrency(gold, diamond) {
+      const currency = getUserCurrency();
+      if (gold && currency.gold < gold) return false;
+      if (diamond && currency.diamond < diamond) return false;
+      if (gold) currency.gold -= gold;
+      if (diamond) currency.diamond -= diamond;
+      saveUserCurrency(currency);
+      updateCurrencyDisplay();
+      return true;
+    }
+
+    // 开启宝箱
+    function openChest() {
+      const currency = getUserCurrency();
+      if (!currency.chest || currency.chest <= 0) {
+        alert('你没有宝箱！');
+        return;
+      }
+      currency.chest--;
+      const diamondReward = Math.floor(Math.random() * 13) + 8; // 8-20钻石
+      currency.diamond = (currency.diamond || 0) + diamondReward;
+      saveUserCurrency(currency);
+      updateCurrencyDisplay();
+
+      // 显示开启动画
+      const anim = document.createElement('div');
+      anim.className = 'chest-open-animation';
+      anim.innerHTML = `
+        <div style="font-size: 60px; margin-bottom: 15px;">📦</div>
+        <div style="color: #a855f7; font-size: 24px; font-weight: bold; margin-bottom: 10px;">宝箱开启！</div>
+        <div style="color: #fff; font-size: 20px; font-weight: bold; margin-bottom: 5px;">获得 ${diamondReward} 💎 钻石</div>
+        <div style="color: rgba(255,255,255,0.6); font-size: 14px;">当前钻石: ${currency.diamond}</div>
+      `;
+      document.body.appendChild(anim);
+      setTimeout(() => {
+        if (anim.parentNode) anim.parentNode.removeChild(anim);
+      }, 2000);
+    }
+
+    // ==================== 货币系统结束 ====================
+
+    // ==================== 商店系统 ====================
+
+    // 显示商店
+    function showShopPage() {
+      if (!currentUser) {
+        alert('请先登录账号');
+        return;
+      }
+      renderShop();
+      updateCurrencyDisplay();
+      document.getElementById('shopOverlay').classList.add('show');
+    }
+
+    // 关闭商店
+    function closeShop() {
+      document.getElementById('shopOverlay').classList.remove('show');
+    }
+
+    // 渲染商店
+    function renderShop() {
+      const grid = document.getElementById('shopGrid');
+      const currency = getUserCurrency();
+      let html = '';
+
+      SHOP_ITEMS.forEach(item => {
+        const canAfford = currency.gold >= item.price;
+        const rarityClass = `rarity-${item.rarity}`;
+        const rarityText = { common: '普通', rare: '稀有', epic: '史诗', legendary: '传说' }[item.rarity];
+
+        html += `
+          <div class="shop-item" style="--shop-color: ${item.color};">
+            <span class="shop-item-icon">${item.icon}</span>
+            <div class="shop-item-name">${item.name}</div>
+            <div class="weapon-rarity ${rarityClass}">${rarityText}</div>
+            <div class="shop-item-effect">${item.effect}</div>
+            <div class="shop-item-price">
+              <span>🪙</span>
+              <span>${item.price}</span>
+            </div>
+            <button class="shop-buy-btn" onclick="buyItem('${item.id}')" ${!canAfford ? 'disabled' : ''}>
+              ${canAfford ? '购买' : '金币不足'}
+            </button>
+          </div>
+        `;
+      });
+
+      grid.innerHTML = html;
+    }
+
+    // 购买道具
+    function buyItem(itemId) {
+      const item = SHOP_ITEMS.find(i => i.id === itemId);
+      if (!item) return;
+
+      if (!spendCurrency(item.price, 0)) {
+        alert('金币不足！');
+        return;
+      }
+
+      // 添加到背包
+      const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+      if (!users[currentUser].inventory) users[currentUser].inventory = [];
+      users[currentUser].inventory.push({
+        ...item,
+        instanceId: Date.now() + Math.random().toString(36).substr(2, 9),
+        equipped: false
+      });
+
+      // 检查首次购买道具成就
+      if (!users[currentUser].achievements) users[currentUser].achievements = { earned: [], progress: {}, newlyUnlocked: 0 };
+      if (!users[currentUser].achievements.earned.includes('first_item')) {
+        users[currentUser].achievements.earned.push('first_item');
+        users[currentUser].achievements.newlyUnlocked = (users[currentUser].achievements.newlyUnlocked || 0) + 1;
+      }
+
+      localStorage.setItem('vsFateUsers', JSON.stringify(users));
+
+      alert(`购买成功！${item.name} 已添加到背包`);
+      renderShop();
+    }
+
+    // ==================== 商店系统结束 ====================
+
+    // ==================== 宠物系统 ====================
+
+    // 显示宠物页面
+    function showPetPage() {
+      if (!currentUser) {
+        alert('请先登录账号');
+        return;
+      }
+      renderPetPage();
+      document.getElementById('petOverlay').classList.add('show');
+    }
+
+    // 关闭宠物页面
+    function closePetPage() {
+      document.getElementById('petOverlay').classList.remove('show');
+    }
+
+    // 渲染宠物页面
+    function renderPetPage() {
+      updateCurrencyDisplay();
+      const container = document.getElementById('petContainer');
+      const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+      const petCollection = users[currentUser]?.petCollection || [];
+      const equippedPet = users[currentUser]?.equippedPet || null;
+
+      let html = '';
+
+      // 显示已装备的宠物
+      if (equippedPet) {
+        const pet = PET_DATA.find(p => p.id === equippedPet);
+        if (pet) {
+          html += `
+            <div style="background: rgba(255,255,255,0.05); border: 2px solid ${pet.color}; border-radius: 15px; padding: 20px; margin-bottom: 30px; text-align: center;">
+              <div style="color: #d4a84b; font-size: 18px; font-weight: bold; margin-bottom: 15px;">当前携带的宠物</div>
+              <div style="font-size: 60px; margin-bottom: 10px;">${pet.icon}</div>
+              <div style="color: #fff; font-size: 22px; font-weight: bold; margin-bottom: 5px;">${pet.name}</div>
+              <div style="color: ${pet.color}; font-size: 14px; font-weight: bold; margin-bottom: 10px;">${pet.description}</div>
+              <button class="shop-buy-btn" onclick="unequipPet()" style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);">取消携带</button>
+            </div>
+          `;
+        }
+      } else {
+        html += `
+          <div style="background: rgba(255,255,255,0.05); border: 2px dashed rgba(255,255,255,0.2); border-radius: 15px; padding: 20px; margin-bottom: 30px; text-align: center; color: rgba(255,255,255,0.5);">
+            <div style="font-size: 40px; margin-bottom: 10px;">🐾</div>
+            <div style="font-size: 16px;">尚未携带宠物</div>
+            <div style="font-size: 13px; margin-top: 5px;">抽卡或选择下方宠物进行携带</div>
+          </div>
+        `;
+      }
+
+      // 抽卡区域
+      html += `
+        <div style="background: rgba(255,255,255,0.05); border: 2px solid #a855f7; border-radius: 15px; padding: 25px; margin-bottom: 30px; text-align: center;">
+          <div style="color: #a855f7; font-size: 22px; font-weight: bold; margin-bottom: 15px;">🎲 宠物召唤</div>
+          <div style="color: rgba(255,255,255,0.7); font-size: 14px; margin-bottom: 15px;">
+            消耗 10 💎 钻石召唤一只随机宠物<br>
+            <span style="font-size: 12px;">普通 35% | 稀有 25% | 史诗 20% | 传说 10%</span>
+          </div>
+          <button class="shop-buy-btn" onclick="drawPet()" style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);">
+            🎲 召唤一次 (10💎)
+          </button>
+        </div>
+      `;
+
+      // 已拥有的宠物列表
+      if (petCollection.length > 0) {
+        html += `<div style="color: #d4a84b; font-size: 18px; font-weight: bold; margin-bottom: 15px; text-align: center;">已拥有的宠物 (${petCollection.length}/10)</div>`;
+        html += `<div class="shop-grid">`;
+        petCollection.forEach(petId => {
+          const pet = PET_DATA.find(p => p.id === petId);
+          if (pet) {
+            const isEquipped = equippedPet === petId;
+            html += `
+              <div class="shop-item" style="--shop-color: ${pet.color}; ${isEquipped ? 'border-color: #22c55e; box-shadow: 0 0 15px rgba(34,197,94,0.3);' : ''}">
+                <span class="shop-item-icon">${pet.icon}</span>
+                <div class="shop-item-name">${pet.name}</div>
+                <div class="weapon-rarity rarity-${pet.rarity}" style="font-size: 11px; margin-bottom: 5px;">${pet.description}</div>
+                <div class="shop-item-effect">${isEquipped ? '✓ 已携带' : '点击携带'}</div>
+                ${!isEquipped ? `<button class="shop-buy-btn" onclick="equipPet('${pet.id}')" style="margin-top: 10px;">携带</button>` : ''}
+              </div>
+            `;
+          }
+        });
+        html += `</div>`;
+      } else {
+        html += `<div style="text-align: center; color: rgba(255,255,255,0.5); padding: 40px;">还没有宠物，快去召唤吧！</div>`;
+      }
+
+      container.innerHTML = html;
+    }
+
+    // 抽卡
+    function drawPet() {
+      const currency = getUserCurrency();
+      if (!currency.diamond || currency.diamond < 10) {
+        alert('钻石不足！需要 10 💎 钻石');
+        return;
+      }
+
+      if (!spendCurrency(0, 10)) {
+        alert('钻石不足！');
+        return;
+      }
+
+      // 抽卡概率
+      const roll = Math.random();
+      let rarity;
+      if (roll < 0.10) {
+        rarity = 'legendary';
+      } else if (roll < 0.30) {
+        rarity = 'epic';
+      } else if (roll < 0.55) {
+        rarity = 'rare';
+      } else {
+        rarity = 'common';
+      }
+
+      // 从对应品质中随机选择一只
+      const petsOfRarity = PET_DATA.filter(p => p.rarity === rarity);
+      const drawnPet = petsOfRarity[Math.floor(Math.random() * petsOfRarity.length)];
+
+      // 保存到收集
+      const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+      if (!users[currentUser].petCollection) users[currentUser].petCollection = [];
+
+      const isNew = !users[currentUser].petCollection.includes(drawnPet.id);
+      if (isNew) {
+        users[currentUser].petCollection.push(drawnPet.id);
+      }
+
+      // 初始化成就数据
+      if (!users[currentUser].achievements) users[currentUser].achievements = { earned: [], progress: {}, newlyUnlocked: 0 };
+      if (!users[currentUser].achievements.progress) users[currentUser].achievements.progress = {};
+
+      // 检查首次召唤成就
+      if (!users[currentUser].achievements.earned.includes('first_gacha')) {
+        users[currentUser].achievements.earned.push('first_gacha');
+        users[currentUser].achievements.newlyUnlocked = (users[currentUser].achievements.newlyUnlocked || 0) + 1;
+      }
+
+      // 更新召唤次数
+      users[currentUser].achievements.progress.gachaCount = (users[currentUser].achievements.progress.gachaCount || 0) + 1;
+
+      // 检查召唤大师成就（20次）
+      if (users[currentUser].achievements.progress.gachaCount >= 20 && !users[currentUser].achievements.earned.includes('gacha_master')) {
+        users[currentUser].achievements.earned.push('gacha_master');
+        users[currentUser].achievements.newlyUnlocked = (users[currentUser].achievements.newlyUnlocked || 0) + 1;
+      }
+
+      // 检查首次获得宠物成就
+      if (isNew && users[currentUser].petCollection.length === 1 && !users[currentUser].achievements.earned.includes('first_pet')) {
+        users[currentUser].achievements.earned.push('first_pet');
+        users[currentUser].achievements.newlyUnlocked = (users[currentUser].achievements.newlyUnlocked || 0) + 1;
+      }
+
+      // 检查宠物收集成就（5只）
+      if (isNew && users[currentUser].petCollection.length >= 5 && !users[currentUser].achievements.earned.includes('pet_collector_5')) {
+        users[currentUser].achievements.earned.push('pet_collector_5');
+        users[currentUser].achievements.newlyUnlocked = (users[currentUser].achievements.newlyUnlocked || 0) + 1;
+      }
+
+      // 检查宠物大师成就（10只全收集）
+      if (isNew && users[currentUser].petCollection.length >= 10 && !users[currentUser].achievements.earned.includes('pet_collector_all')) {
+        users[currentUser].achievements.earned.push('pet_collector_all');
+        users[currentUser].achievements.newlyUnlocked = (users[currentUser].achievements.newlyUnlocked || 0) + 1;
+      }
+
+      // 检查传说宠物成就
+      if (isNew && rarity === 'legendary' && !users[currentUser].achievements.earned.includes('legendary_pet')) {
+        users[currentUser].achievements.earned.push('legendary_pet');
+        users[currentUser].achievements.newlyUnlocked = (users[currentUser].achievements.newlyUnlocked || 0) + 1;
+      }
+
+      localStorage.setItem('vsFateUsers', JSON.stringify(users));
+
+      // 显示抽卡结果
+      const rarityText = { common: '普通', rare: '稀有', epic: '史诗', legendary: '传说' }[rarity];
+      const rarityColor = { common: '#888', rare: '#3b82f6', epic: '#a855f7', legendary: '#eab308' }[rarity];
+
+      const resultDiv = document.createElement('div');
+      resultDiv.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0);
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 3px solid ${rarityColor};
+        border-radius: 20px;
+        padding: 40px 60px;
+        text-align: center;
+        z-index: 3000;
+        box-shadow: 0 0 50px ${rarityColor}80;
+        animation: chestPop 0.5s ease forwards;
+      `;
+      resultDiv.innerHTML = `
+        <div style="font-size: 14px; color: ${rarityColor}; font-weight: bold; margin-bottom: 10px;">${rarityText}品质</div>
+        <div style="font-size: 80px; margin-bottom: 15px;">${drawnPet.icon}</div>
+        <div style="color: #fff; font-size: 28px; font-weight: bold; margin-bottom: 10px;">${drawnPet.name}</div>
+        <div style="color: ${rarityColor}; font-size: 16px; margin-bottom: 5px;">${drawnPet.description}</div>
+        ${isNew ? '<div style="color: #22c55e; font-size: 14px; font-weight: bold;">✨ 新宠物！</div>' : '<div style="color: rgba(255,255,255,0.5); font-size: 14px;">已拥有，转化为 5 💎</div>'}
+      `;
+      document.body.appendChild(resultDiv);
+
+      // 如果重复，返还5钻石
+      if (!isNew) {
+        const users2 = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+        users2[currentUser].currency.diamond += 5;
+        localStorage.setItem('vsFateUsers', JSON.stringify(users2));
+      }
+
+      setTimeout(() => {
+        if (resultDiv.parentNode) resultDiv.parentNode.removeChild(resultDiv);
+        updateCurrencyDisplay();
+        renderPetPage();
+      }, 2500);
+    }
+
+    // 携带宠物
+    function equipPet(petId) {
+      const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+      if (!users[currentUser]) return;
+      users[currentUser].equippedPet = petId;
+      localStorage.setItem('vsFateUsers', JSON.stringify(users));
+      alert('宠物已携带！进入战斗即可获得属性加成。');
+      renderPetPage();
+    }
+
+    // 取消携带宠物
+    function unequipPet() {
+      const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+      if (!users[currentUser]) return;
+      delete users[currentUser].equippedPet;
+      localStorage.setItem('vsFateUsers', JSON.stringify(users));
+      alert('已取消携带宠物。');
+      renderPetPage();
+    }
+
+    // ==================== 宠物系统结束 ====================
+
+    // ==================== 背包系统 ====================
+
+    // 显示背包
+    function showItemPage() {
+      if (!currentUser) {
+        alert('请先登录账号');
+        return;
+      }
+      currentInventoryFilter = 'all';
+      document.querySelectorAll('.inventory-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.inventory-tab')[0].classList.add('active');
+      renderInventory();
+      document.getElementById('inventoryOverlay').classList.add('show');
+    }
+
+    // 关闭背包
+    function closeInventory() {
+      document.getElementById('inventoryOverlay').classList.remove('show');
+    }
+
+    // 筛选背包
+    function filterInventory(filter) {
+      currentInventoryFilter = filter;
+      document.querySelectorAll('.inventory-tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      renderInventory();
+    }
+
+    // 获取背包数据
+    function getUserInventory() {
+      const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+      if (!users[currentUser]) return [];
+      return users[currentUser].inventory || [];
+    }
+
+    // 渲染背包
+    function renderInventory() {
+      const grid = document.getElementById('inventoryGrid');
+      let items = getUserInventory();
+
+      if (currentInventoryFilter === 'equipped') {
+        items = items.filter(i => i.equipped);
+      }
+
+      if (items.length === 0) {
+        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: rgba(255,255,255,0.5); padding: 40px;">背包是空的，去商店购买道具吧！</div>';
+        return;
+      }
+
+      let html = '';
+      items.forEach(item => {
+        const equippedClass = item.equipped ? 'equipped' : '';
+        const rarityClass = `rarity-${item.rarity}`;
+        const isChest = item.id === 'chest_item' || item.stats?.chest;
+        const actionText = isChest ? '点击开启' : (item.equipped ? '点击取消携带' : '点击携带');
+        const badgeText = isChest ? '' : (item.equipped ? '<div class="inventory-item-badge">已携带</div>' : '');
+
+        html += `
+          <div class="inventory-item ${equippedClass}" style="--item-color: ${item.color};" onclick="toggleEquipItem('${item.instanceId}')">
+            ${badgeText}
+            <span class="inventory-item-icon">${item.icon}</span>
+            <div class="inventory-item-name">${item.name}</div>
+            <div class="weapon-rarity ${rarityClass}" style="font-size: 10px; margin-bottom: 5px;">${item.effect}</div>
+            <div class="inventory-item-desc">${actionText}</div>
+          </div>
+        `;
+      });
+
+      grid.innerHTML = html;
+    }
+
+    // 切换道具携带状态或使用道具
+    function toggleEquipItem(instanceId) {
+      const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+      if (!users[currentUser] || !users[currentUser].inventory) return;
+
+      const inventory = users[currentUser].inventory;
+      const item = inventory.find(i => i.instanceId === instanceId);
+      if (!item) return;
+
+      // 如果是宝箱道具，直接开启
+      if (item.id === 'chest_item' || item.stats?.chest) {
+        openChestItem(item, users);
+        return;
+      }
+
+      if (!item.equipped) {
+        // 检查是否已满2个
+        const equippedCount = inventory.filter(i => i.equipped).length;
+        if (equippedCount >= 2) {
+          alert('最多只能携带2个道具！请先取消携带一个道具。');
+          return;
+        }
+        item.equipped = true;
+        alert(`${item.name} 已携带，可在战斗中使用！`);
+      } else {
+        item.equipped = false;
+        alert(`${item.name} 已取消携带。`);
+      }
+
+      localStorage.setItem('vsFateUsers', JSON.stringify(users));
+      renderInventory();
+    }
+
+    // 开启宝箱道具
+    function openChestItem(item, users) {
+      if (!confirm(`是否开启 ${item.name}？\n\n开启后可获得 8-20 颗钻石！`)) {
+        return;
+      }
+
+      // 随机获得8-20钻石
+      const diamondReward = Math.floor(Math.random() * 13) + 8;
+
+      // 添加钻石到货币
+      if (!users[currentUser].currency) {
+        users[currentUser].currency = { gold: 0, diamond: 0, chest: 0 };
+      }
+      users[currentUser].currency.diamond = (users[currentUser].currency.diamond || 0) + diamondReward;
+
+      // 从背包中移除宝箱
+      const idx = users[currentUser].inventory.findIndex(i => i.instanceId === item.instanceId);
+      if (idx !== -1) {
+        users[currentUser].inventory.splice(idx, 1);
+      }
+
+      localStorage.setItem('vsFateUsers', JSON.stringify(users));
+
+      // 显示开启结果
+      alert(`🎉 宝箱开启成功！\n\n获得 ${diamondReward} 💎 钻石！\n\n当前钻石: ${users[currentUser].currency.diamond}`);
+
+      // 更新显示
+      updateCurrencyDisplay();
+      renderInventory();
+    }
+
+    // ==================== 背包系统结束 ====================
+
+    // 显示职业选择页面
+    function showClassSelectPage() {
+      document.getElementById('loginPage').classList.add('hidden');
+      document.getElementById('mainMenuPage').classList.add('hidden');
+      document.getElementById('classSelectPage').classList.remove('hidden');
+      document.getElementById('difficultySelectPage').classList.add('hidden');
+      renderClassCards();
+    }
+
+    // 显示难度选择页面
+    function showDifficultySelectPage() {
+      document.getElementById('loginPage').classList.add('hidden');
+      document.getElementById('mainMenuPage').classList.add('hidden');
+      document.getElementById('classSelectPage').classList.add('hidden');
+      document.getElementById('difficultySelectPage').classList.remove('hidden');
+      renderDifficultyCards();
+    }
+
+    // 渲染职业卡片
+    function renderClassCards() {
+      const container = document.getElementById('classCardsContainer');
+      container.innerHTML = '';
+
+      Object.values(CLASSES).forEach(cls => {
+        const card = document.createElement('div');
+        card.className = 'class-card';
+        card.style.setProperty('--class-color', cls.color);
+        card.onclick = () => selectClass(cls.id);
+
+        let skillsHtml = '';
+        cls.skills.forEach(skill => {
+          skillsHtml += `<div class="skill-tag" style="background-color: ${skill.color}">${skill.name}</div>`;
+        });
+
+        card.innerHTML = `
+          <div class="class-icon">${cls.icon}</div>
+          <h2 class="class-name">${cls.name}</h2>
+          <p class="class-description">${cls.description}</p>
+          <div class="class-stats">
+            <div class="stat">
+              <span class="stat-label">HP</span>
+              <span class="stat-value hp">${cls.hp}</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">NP</span>
+              <span class="stat-value np">${cls.np}</span>
+            </div>
+          </div>
+          <div class="skill-tags">
+            ${skillsHtml}
+          </div>
+          <button class="modal-btn btn-confirm">选择此职业</button>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    // 渲染难度卡片
+    function renderDifficultyCards() {
+      const container = document.getElementById('difficultyCardsContainer');
+      container.innerHTML = '';
+
+      DIFFICULTIES.forEach(diff => {
+        const card = document.createElement('div');
+        card.className = `difficulty-card ${diff.id}`;
+        card.onclick = () => selectDifficulty(diff.id);
+
+        let featuresHtml = '';
+        diff.features.forEach(feature => {
+          featuresHtml += `<li>${feature}</li>`;
+        });
+
+        card.innerHTML = `
+          <div class="difficulty-icon">${diff.icon}</div>
+          <h2 class="difficulty-name">${diff.name}</h2>
+          <p class="difficulty-description">${diff.description}</p>
+          <div class="difficulty-stats">
+            <div class="difficulty-stat">
+              <span class="stat-label">Boss HP</span>
+              <span class="stat-value">${diff.bossHp}</span>
+            </div>
+            <div class="difficulty-stat">
+              <span class="stat-label">Boss NP</span>
+              <span class="stat-value">${diff.bossNp}</span>
+            </div>
+            <div class="difficulty-stat">
+              <span class="stat-label">攻击力</span>
+              <span class="stat-value">${diff.bossAttackMin}-${diff.bossAttackMax}</span>
+            </div>
+          </div>
+          <div class="difficulty-features">
+            <h3>Boss特性</h3>
+            <ul>
+              ${featuresHtml}
+            </ul>
+          </div>
+          <button class="select-difficulty-btn">选择${diff.name}</button>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    // 选择职业
+    function selectClass(classId) {
+      const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+      const cls = CLASSES[classId];
+      users[currentUser].gameData.selectedClass = classId;
+      users[currentUser].gameData.playerHp = cls.hp;
+      users[currentUser].gameData.playerNp = cls.np;
+      localStorage.setItem('vsFateUsers', JSON.stringify(users));
+      
+      localStorage.setItem('selectedClass', classId);
+      
+      // 显示难度选择页面
+      showDifficultySelectPage();
+    }
+
+    // 选择难度
+    function selectDifficulty(difficultyId) {
+      const users = JSON.parse(localStorage.getItem('vsFateUsers') || '{}');
+      const diff = DIFFICULTIES.find(d => d.id === difficultyId);
+      users[currentUser].gameData.selectedDifficulty = difficultyId;
+      localStorage.setItem('vsFateUsers', JSON.stringify(users));
+      
+      localStorage.setItem('selectedDifficulty', difficultyId);
+      
+      // 跳转到游戏页面
+      window.location.href = 'index.html';
+    }
+
+    // 开始游戏
+    function startGame() {
+      if (!currentUser) {
+        showLoginModal();
+        return;
+      }
+      showMainMenuPage();
+    }
+
+    // 返回主菜单
+    function backToMainMenu() {
+      document.getElementById('classSelectPage').classList.add('hidden');
+      document.getElementById('difficultySelectPage').classList.add('hidden');
+      document.getElementById('mainMenuPage').classList.remove('hidden');
+    }
+
+    // 从主菜单返回登录
+    function backToLoginFromMenu() {
+      document.getElementById('mainMenuPage').classList.add('hidden');
+      document.getElementById('classSelectPage').classList.add('hidden');
+      document.getElementById('difficultySelectPage').classList.add('hidden');
+      document.getElementById('loginPage').classList.remove('hidden');
+    }
+
+    // 返回职业选择
+    function backToClassSelect() {
+      document.getElementById('difficultySelectPage').classList.add('hidden');
+      document.getElementById('classSelectPage').classList.remove('hidden');
+    }
+
+    // 退出游戏
+    function exitGame() {
+      if (confirm('确定要退出游戏吗？')) {
+        localStorage.removeItem('currentUser');
+        currentUser = null;
+        document.getElementById('tipMessage').textContent = '请先登录账号后再开始游戏';
+      }
+    }
+
+    // 回车键提交
+    document.getElementById('password').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleConfirm();
+    });
+
+    document.getElementById('username').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') document.getElementById('password').focus();
+    });
+  </script>
+</body>
+</html>
