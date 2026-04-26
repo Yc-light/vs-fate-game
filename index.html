@@ -22,12 +22,13 @@
             height: 100vh;
             display: flex;
             position: relative;
+            background: url('battle-bg.jpg') center/cover no-repeat;
         }
 
         .left-panel {
             width: 50%;
             height: 100%;
-            background: linear-gradient(135deg, #4a90d9 0%, #2c5f8f 50%, #1a3a5c 100%);
+            background: linear-gradient(135deg, rgba(74,144,217,0.3) 0%, rgba(44,95,143,0.5) 50%, rgba(26,58,92,0.7) 100%);
             position: relative;
             overflow: hidden;
         }
@@ -40,14 +41,14 @@
             right: 0;
             bottom: 0;
             background: 
-                radial-gradient(circle at 30% 70%, rgba(255,255,255,0.1) 0%, transparent 50%),
-                radial-gradient(circle at 70% 30%, rgba(100,180,255,0.2) 0%, transparent 40%);
+                radial-gradient(circle at 30% 70%, rgba(255,255,255,0.05) 0%, transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(100,180,255,0.1) 0%, transparent 40%);
         }
 
         .right-panel {
             width: 50%;
             height: 100%;
-            background: linear-gradient(225deg, #c94c4c 0%, #8b2f2f 50%, #5c1a1a 100%);
+            background: linear-gradient(225deg, rgba(201,76,76,0.3) 0%, rgba(139,47,47,0.5) 50%, rgba(92,26,26,0.7) 100%);
             position: relative;
             overflow: hidden;
         }
@@ -188,6 +189,14 @@
             justify-content: center;
             font-size: 60px;
             color: rgba(255,255,255,0.9);
+            overflow: hidden;
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
         }
 
         /* 战斗中宠物显示 - 在头像旁边 */
@@ -1524,7 +1533,7 @@
         
         <div class="player-area player-left">
             <div class="avatar-container" id="playerAvatar">
-                <div class="avatar" id="playerAvatarIcon">⚔️</div>
+                <div class="avatar" id="playerAvatarIcon"><img src="warrior.png" alt="头像"></div>
             </div>
             <div class="battle-pet" id="battlePet" style="display: none;"></div>
             <div class="status-bars">
@@ -1548,7 +1557,7 @@
         
         <div class="player-area player-right">
             <div class="avatar-container" id="enemyAvatar">
-                <div class="avatar">👹</div>
+                <div class="avatar" id="enemyAvatarIcon"><img src="minion.jpg" alt="敌方"></div>
             </div>
             <div class="status-bars">
                 <div class="hp-bar-container">
@@ -1615,6 +1624,7 @@
                 id: 'samurai',
                 name: '武士',
                 icon: '⚔️',
+                avatar: 'warrior.png',
                 hp: 50,
                 maxHp: 50,
                 np: 20,
@@ -1630,6 +1640,7 @@
                 id: 'mage',
                 name: '法师',
                 icon: '🔮',
+                avatar: 'mage.png',
                 hp: 40,
                 maxHp: 40,
                 np: 30,
@@ -1645,6 +1656,7 @@
                 id: 'archer',
                 name: '射手',
                 icon: '🏹',
+                avatar: 'archer.jpg',
                 hp: 45,
                 maxHp: 45,
                 np: 18,
@@ -1660,6 +1672,7 @@
                 id: 'guardian',
                 name: '盾卫',
                 icon: '🛡️',
+                avatar: 'guardian.jpg',
                 hp: 70,
                 maxHp: 70,
                 np: 12,
@@ -1896,6 +1909,18 @@
             const enemyNameEl = document.querySelector('.right-panel .character-name');
             if (enemyNameEl) {
                 enemyNameEl.textContent = stage.name;
+            }
+
+            // 更新敌人头像
+            const enemyAvatarIcon = document.getElementById('enemyAvatarIcon');
+            if (enemyAvatarIcon) {
+                let avatarSrc = 'minion.jpg';
+                if (stage.type === 'elite') {
+                    avatarSrc = 'elite.jpg';
+                } else if (stage.type === 'boss') {
+                    avatarSrc = 'boss.jpg';
+                }
+                enemyAvatarIcon.innerHTML = `<img src="${avatarSrc}" alt="${stage.name}">`;
             }
 
             // 精英怪标记
@@ -2331,7 +2356,12 @@
             initStageSystem();
 
             // 更新头像
-            document.getElementById('playerAvatarIcon').textContent = selectedClass.icon;
+            const avatarIcon = document.getElementById('playerAvatarIcon');
+            if (selectedClass.avatar) {
+                avatarIcon.innerHTML = `<img src="${selectedClass.avatar}" alt="${selectedClass.name}">`;
+            } else {
+                avatarIcon.textContent = selectedClass.icon;
+            }
 
             // 生成技能按钮
             renderSkillButtons();
@@ -3617,7 +3647,12 @@
                     
                     selectedClass = savedClass;
                     selectedDifficulty = savedDifficulty;
-                    document.getElementById('playerAvatarIcon').textContent = selectedClass.icon;
+                    const avatarIcon = document.getElementById('playerAvatarIcon');
+                    if (selectedClass.avatar) {
+                        avatarIcon.innerHTML = `<img src="${selectedClass.avatar}" alt="${selectedClass.name}">`;
+                    } else {
+                        avatarIcon.textContent = selectedClass.icon;
+                    }
                     
                     gameState.player.hp = saved.playerHp || selectedClass.hp;
                     gameState.player.np = saved.playerNp || selectedClass.np;
